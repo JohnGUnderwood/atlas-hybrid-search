@@ -43,7 +43,7 @@ export default function Home(){
     <>
     <Header/>
     <AppBanner heading="Atlas Hybrid Search Tester"></AppBanner>
-    <div style={{display:"grid",gridTemplateColumns:"90% 10%",gap:"10px",alignItems:"start"}}>
+    <div style={{display:"grid",gridTemplateColumns:"90% 120px",gap:"10px",alignItems:"start"}}>
       <div><SearchInput value={query} onChange={handleQueryChange} aria-label="some label" style={{marginBottom:"20px"}}></SearchInput></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSearch()} variant="primary">Vector Search</Button></div>
     </div>
