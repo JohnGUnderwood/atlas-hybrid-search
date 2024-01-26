@@ -152,6 +152,16 @@ async function search(query,queryVector,schema,config) {
           }
         },
         {
+            $project: {
+              _id: 1,
+              title: 1,
+              image:1,
+              description:1,
+              vs_score: {$ifNull: ["$vs_score", 0]},
+              fts_score: {$ifNull: ["$fts_score", 0]},
+            }
+          },
+        {
           $project: {
             _id: 1,
             title: 1,
