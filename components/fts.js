@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 
-
 function FTS({query,schema}){
 
     const [results, setResults] = useState(null);

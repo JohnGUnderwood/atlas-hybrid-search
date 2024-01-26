@@ -2,10 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
-import { Label } from '@leafygreen-ui/typography';
-import Button from '@leafygreen-ui/button';
-
-
+import SetParams from "./set-params";
 
 function RSF({query,queryVector,schema}){
     const [results, setResults] = useState(null);
@@ -23,8 +20,8 @@ function RSF({query,queryVector,schema}){
     const resetConfig = () => {
         setConfig({
             vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
-            vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
             fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
+            vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
             fts_normalization : {val:10,range:[0,100],step:5,comment:"Rough scaling of full text search scores"}, 
             k : {val:10,range:[1,25],step:1,comment:"Number of results"},
             overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
@@ -37,11 +34,11 @@ function RSF({query,queryVector,schema}){
                 ...config,
                 fts_scalar: {
                   ...config.fts_scalar,
-                  val:newValue
+                  val:parseFloat(newValue)
                 },
                 vector_scalar: {
                     ...config.vector_scalar,
-                    val: 1-newValue
+                    val: parseFloat(1-newValue)
                 }
               });
         }else if(param == "vector_scalar"){
@@ -49,11 +46,11 @@ function RSF({query,queryVector,schema}){
                 ...config,
                 vector_scalar: {
                   ...config.vector_scalar,
-                  val:newValue
+                  val:parseFloat(newValue)
                 },
                 fts_scalar: {
                     ...config.fts_scalar,
-                    val: 1-newValue
+                    val: parseFloat(1-newValue)
                 }
               });
         }else{
@@ -61,7 +58,7 @@ function RSF({query,queryVector,schema}){
                 ...config,
                 [param]: {
                   ...config[param],
-                  val:newValue
+                  val:parseFloat(newValue)
                 }
               });
         }
@@ -78,36 +75,7 @@ function RSF({query,queryVector,schema}){
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <div>
-                <h2>Relative Score Fusion Params</h2>
-                <div style={{maxWidth:"60px"}}><Button onClick={()=>resetConfig()} variant="primary">Reset</Button></div>
-                {Object.keys(config).map(param=>(
-                    <>
-                    <p key={param+"_title"}>{param}</p>
-                    <p key={param+"_comment"}><i>{config[param]['comment']}</i></p>
-                    <Label key={param}>
-                        <input
-                            key={param+'_slider'}
-                            style={{verticalAlign:"bottom"}}
-                            type="range"
-                            min={config[param]['range'][0]} 
-                            max={config[param]['range'][1]}
-                            step={config[param]['step']} 
-                            value={config[param]['val']} 
-                            onChange={(e) => handleSliderChange(param, e.target.value)}
-                        />
-                        <input
-                            key={param+'_box'}
-                            style={{width:"3lvh"}}
-                            type="text"
-                            value={config[param]['val']} 
-                            onChange={(e) => handleSliderChange(param, e.target.value)}
-                        />
-                    </Label>
-                    </>
-                ))}
-            
-            </div>
+            <SetParams config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Relative Score Fusion Params"/>
             <Results results={results} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)}/>
         </div>
     )

@@ -2,10 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
-import { Label } from '@leafygreen-ui/typography';
-import Button from '@leafygreen-ui/button';
-
-
+import SetParams from "./set-params";
 
 function RSF({query,queryVector,schema}){
     const [results, setResults] = useState(null);
@@ -32,7 +29,7 @@ function RSF({query,queryVector,schema}){
             ...config,
             [param]: {
                 ...config[param],
-                val:newValue
+                val:parseFloat(newValue)
             }
             });
       };
@@ -48,36 +45,7 @@ function RSF({query,queryVector,schema}){
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <div>
-                <h2>Relative Score Fusion Params</h2>
-                <div style={{maxWidth:"60px"}}><Button onClick={()=>resetConfig()} variant="primary">Reset</Button></div>
-                {Object.keys(config).map(param=>(
-                    <>
-                    <p key={param+"_title"}>{param}</p>
-                    <p key={param+"_comment"}><i>{config[param]['comment']}</i></p>
-                    <Label key={param}>
-                        <input
-                            key={param+'_slider'}
-                            style={{verticalAlign:"bottom"}}
-                            type="range"
-                            min={config[param]['range'][0]} 
-                            max={config[param]['range'][1]}
-                            step={config[param]['step']} 
-                            value={config[param]['val']} 
-                            onChange={(e) => handleSliderChange(param, e.target.value)}
-                        />
-                        <input
-                            key={param+'_box'}
-                            style={{width:"3lvh"}}
-                            type="text"
-                            value={config[param]['val']} 
-                            onChange={(e) => handleSliderChange(param, e.target.value)}
-                        />
-                    </Label>
-                    </>
-                ))}
-            
-            </div>
+            <SetParams config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Reciprocal Rank Fusion Params"/>
             <Results results={results} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)}/>
         </div>
     )
@@ -120,10 +88,10 @@ async function search(query,queryVector,schema,config) {
         {
           $project: {
             vs_score: 1, 
-            _id: 1, 
-            title:`$${schema.titleField}`,
-            image:`$${schema.imageField}`,
-            description:`$${schema.descriptionField}`
+            _id: "$docs._id", 
+            title:`$docs.${schema.titleField}`,
+            image:`$docs.${schema.imageField}`,
+            description:`$docs.${schema.descriptionField}`
           }
         },
         {
@@ -164,10 +132,10 @@ async function search(query,queryVector,schema,config) {
               {
                 $project: {
                     fts_score: 1,
-                    _id: 1,
-                    title:`$${schema.titleField}`,
-                    image:`$${schema.imageField}`,
-                    description:`$${schema.descriptionField}`
+                    _id:"$docs._id",
+                    title:`$docs.${schema.titleField}`,
+                    image:`$docs.${schema.imageField}`,
+                    description:`$docs.${schema.descriptionField}`
                 }
               }
             ]
@@ -188,7 +156,7 @@ async function search(query,queryVector,schema,config) {
             _id: 1,
             title: 1,
             image:1,
-            desription:1,
+            description:1,
             vs_score: {$ifNull: ["$vs_score", 0]},
             fts_score: {$ifNull: ["$fts_score", 0]},
             score: {$add: ["$fts_score", "$vs_score"]},

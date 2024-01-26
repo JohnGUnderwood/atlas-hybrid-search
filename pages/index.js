@@ -3,6 +3,7 @@ import Header from '../components/head';
 import RSF from '../components/rsf';
 import RRF from '../components/rrf';
 import FTS from '../components/fts';
+import VS from '../components/vs';
 import {SearchInput} from '@leafygreen-ui/search-input';
 import { useState, } from 'react';
 import Button from '@leafygreen-ui/button';
@@ -51,6 +52,9 @@ export default function Home(){
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
       <Tab name="Fulltext Search">
         <FTS query={query} schema={schema}/>
+      </Tab>
+      <Tab name="Vector Search">
+        <VS queryVector={queryVector} schema={schema}/>
       </Tab>
       <Tab name="Relative Score Fusion">
         <RSF query={query} queryVector={queryVector} schema={schema}/>
