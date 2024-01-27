@@ -70,33 +70,6 @@ export default function Home(){
   )
 }
 
-function createHighlighting(highlightsField,fieldName,fieldValue) {
-  const highlightedStrings = highlightsField.map(h => {
-    if(h.path === fieldName){
-      return h.texts.map(t => {
-        if(t.type === "hit"){
-          return "<strong style='color:blue'>"+t.value+"</strong>"
-        }else{
-          return t.value
-        }
-        
-      }).join('')
-    }
-  });
-
-  const nonHighlightedStrings = highlightsField.map(h => {
-    if(h.path === fieldName){
-      return h.texts.map(t => t.value).join('')
-    }
-  });
-
-  highlightedStrings.forEach((str,idx) => {
-    fieldValue = fieldValue.replace(nonHighlightedStrings[idx],str);
-  });
-
-  return {__html: fieldValue};
-}
-
 async function embedQuery(query){
   try{
     const embeddingResp = await axios.get('api/embed?terms='+query);

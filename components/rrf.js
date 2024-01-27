@@ -46,7 +46,7 @@ function RSF({query,queryVector,schema}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <SetParams config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Reciprocal Rank Fusion Params"/>
-            <Results results={results} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)}/>
+            <Results results={results} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true}/>
         </div>
     )
 }
@@ -101,7 +101,7 @@ async function search(query,queryVector,schema,config) {
               {
                 $search: {
                     index: schema.searchIndex,
-                    text: {query: query, path: {wildcard:"*"}},
+                    text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
                 }
               },
               {
@@ -152,16 +152,6 @@ async function search(query,queryVector,schema,config) {
           }
         },
         {
-            $project: {
-              _id: 1,
-              title: 1,
-              image:1,
-              description:1,
-              vs_score: {$ifNull: ["$vs_score", 0]},
-              fts_score: {$ifNull: ["$fts_score", 0]},
-            }
-          },
-        {
           $project: {
             _id: 1,
             title: 1,
@@ -169,7 +159,13 @@ async function search(query,queryVector,schema,config) {
             description:1,
             vs_score: {$ifNull: ["$vs_score", 0]},
             fts_score: {$ifNull: ["$fts_score", 0]},
-            score: {$add: ["$fts_score", "$vs_score"]},
+          }
+        },
+        {
+          $addFields:{
+              score: {
+                  $add: ["$fts_score", "$vs_score"],
+              },
           }
         },
         {$limit: config.k.val},

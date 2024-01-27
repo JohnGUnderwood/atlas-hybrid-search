@@ -31,7 +31,7 @@ async function search(query,schema) {
         {
             $search: {
                 index: schema.searchIndex,
-                text: {query: query, path: {wildcard:"*"}},
+                text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
             }
         },
         {
