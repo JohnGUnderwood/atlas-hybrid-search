@@ -1,5 +1,5 @@
 import { createRouter } from 'next-connect';
-import openai from '../../middleware/openai';
+import openai from '../../middleware/model/openai';
 
 async function embed(model,string){
     try{

@@ -12,6 +12,14 @@ For the hybrid search algorithms you can modify the behaviour by changing the pa
 ## Scoring
 For both RSF and RRF algorithms the weighted and/or normalized text and vector scores are calculated and then summed to give the final score. The results show what proportion of each went into the final score for each document.
 
+## Embeddings
+In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. Byt default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
+
+You can swap out OpenAI for another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/model).
+
+### In the application
+In the app the API call to embed the query is made only when the 'vector search' button is selected. The search queries to the database are run each time the parameter values are changed or the different tabs are selected. But the query vector is not regenerated.
+
 ![Hybrid scoring](screenshots/hybrid_scoring.png)
 
 ## Prerequisites
