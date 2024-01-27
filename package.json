@@ -13,6 +13,7 @@
     "@leafygreen-ui/card": "^10.0.6",
     "@leafygreen-ui/loading-indicator": "^2.0.7",
     "@leafygreen-ui/logo": "^8.0.12",
+    "@leafygreen-ui/palette": "^4.0.8",
     "@leafygreen-ui/search-input": "^2.1.2",
     "@leafygreen-ui/tabs": "^11.1.13",
     "@leafygreen-ui/toast": "^6.1.18",

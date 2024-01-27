@@ -1,9 +1,18 @@
 # Atlas Hybrid Search
-This is a simple NextJS app that allows you to run Fulltext Search (FTS) and Vector Search queries against a MongoDB Atlas instance. It is also set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm. This app currently implements Reciprocal Score Fusion (RSF) and Reciprocal Rank Fusion (RRF).
+This is a simple NextJS app that allows you to run Fulltext Search (FTS) and Vector Search queries against a MongoDB Atlas instance.
+
+## About Hybrid Search
+The app is set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm. This app currently implements Relative Score Fusion (RSF) and Reciprocal Rank Fusion (RRF).
 
 ![Compare search methods](screenshots/hybrid_search.png)
 
+## Configuring the algorithms
 For the hybrid search algorithms you can modify the behaviour by changing the parameters using the sliders on the left.
+
+## Scoring
+For both RSF and RRF algorithms the weighted and/or normalized text and vector scores are calculated and then summed to give the final score. The results show what proportion of each went into the final score for each document.
+
+![Hybrid scoring](screenshots/hybrid_scoring.png)
 
 ## Prerequisites
 1. You will need access to an Atlas Cluster.
