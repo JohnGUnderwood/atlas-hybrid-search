@@ -59,7 +59,7 @@ async function search(query,queryVector,schema,config) {
     const pipeline = [
         {
           $vectorSearch: {
-            index: "vectorIndex",
+            index: schema.vectorIndex,
             path: `${schema.vectorField}`,
             queryVector: queryVector,
             numCandidates: config.k.val * config.overrequest_factor.val,
@@ -96,11 +96,11 @@ async function search(query,queryVector,schema,config) {
         },
         {
           $unionWith: {
-            coll: "embedded_movies",
+            coll: schema.searchCollection,
             pipeline: [
               {
                 $search: {
-                    index: "searchIndex",
+                    index: schema.searchIndex,
                     text: {query: query, path: {wildcard:"*"}},
                 }
               },

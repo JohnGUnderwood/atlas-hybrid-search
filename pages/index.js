@@ -18,6 +18,9 @@ const schema = {
   titleField : "title",
   imageField : "poster",
   vectorField : "plot_embedding",
+  searchCollection : "embedded_movies",
+  searchIndex : "searchIndex",
+  vectorIndex : "vectorIndex"
 }
 
 export default function Home(){
