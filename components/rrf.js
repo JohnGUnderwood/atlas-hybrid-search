@@ -8,20 +8,15 @@ function RSF({query,queryVector,schema}){
     const [results, setResults] = useState(null);
 
     // CONFIGURATION PARAMETERS
-    const [config, setConfig] = useState({
-        vector_penalty : {val:1,range:[0,20],step:1,comment:"Penalise vector results score"},
-        fts_penalty : {val:10,range:[0,20],step:1,comment:"Penalise text search results score"}, 
-        k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
-    })
-
+    const defaultConfig = {
+      vector_penalty : {val:1,range:[0,20],step:1,comment:"Penalise vector results score"},
+      fts_penalty : {val:10,range:[0,20],step:1,comment:"Penalise text search results score"}, 
+      k : {val:10,range:[1,25],step:1,comment:"Number of results"},
+      overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
+    }
+    const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
-        setConfig({
-            vector_penalty : {val:1,range:[0,20],step:1,comment:"Penalise vector results score"},
-            fts_penalty : {val:10,range:[0,20],step:1,comment:"Penalise text search results score"}, 
-            k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-            overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
-        });
+        setConfig(defaultConfig);
     }
 
     const handleSliderChange = (param, newValue) => {

@@ -8,24 +8,17 @@ function RSF({query,queryVector,schema}){
     const [results, setResults] = useState(null);
 
     // CONFIGURATION PARAMETERS
-    const [config, setConfig] = useState({
+    const defaultConfig = {
         vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
         vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
         fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
         fts_normalization : {val:10,range:[0,100],step:5,comment:"Rough scaling of full text search scores"}, 
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
         overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
-    })
-
+    }
+    const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
-        setConfig({
-            vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
-            fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
-            vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
-            fts_normalization : {val:10,range:[0,100],step:5,comment:"Rough scaling of full text search scores"}, 
-            k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-            overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
-        });
+        setConfig(defaultConfig);
     }
 
     const handleSliderChange = (param, newValue) => {
