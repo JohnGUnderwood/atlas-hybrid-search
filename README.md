@@ -47,3 +47,10 @@ node create-search-indexes.mjs
 ```
 npm run dev
 ```
+
+## Build for deployment
+```
+npm build
+npm start
+```
+
