@@ -148,8 +148,8 @@ async function search(query,queryVector,schema,config) {
                 },
             }
         },
-        {$limit: config.k.val},
         {$sort: {"score": -1}},
+        {$limit: config.k.val}
     ]
     return new Promise((resolve) => {
         axios.post(`api/search`,
