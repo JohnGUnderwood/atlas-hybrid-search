@@ -20,8 +20,7 @@ async function checkCollections(client,db,coll){
 async function mongodb(){
     const uri = process.env.MDBCONNSTR;
     const db = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";
-    const coll = process.env.MDB_COLL ? process.env.MDB_COLL : "embedded_movies";
-    console.log(db,coll);
+    const coll = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
     try{
         const thisClient = new MongoClient(uri);
         try{

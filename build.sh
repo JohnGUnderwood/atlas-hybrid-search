@@ -15,7 +15,7 @@ abbrvhash=${datehash: -8}
 echo 
 echo "Building container using tag ${abbrvhash}"
 echo
-docker build -t johnunderwood197/atlashybridsearchsearch:latest -t johnunderwood197/atlashybridsearch:${abbrvhash} --platform=linux/amd64 .
+docker build -t johnunderwood197/atlashybridsearch:latest -t johnunderwood197/atlashybridsearch:${abbrvhash} --platform=linux/amd64 .
 
 EXITCODE=$?
 
