@@ -82,7 +82,7 @@ async function search(query,queryVector,schema,config) {
     const pipeline = [
         {
             $vectorSearch:{
-                index: schema.vectorIndex,
+                index: '',
                 queryVector: queryVector,
                 path:`${schema.vectorField}`,
                 numCandidates: config.k.val * config.overrequest_factor.val,
@@ -100,11 +100,11 @@ async function search(query,queryVector,schema,config) {
         },
         {
             $unionWith: {
-                coll: schema.searchCollection,
+                coll: '',
                 pipeline: [
                     {
                         $search: {
-                            index: schema.searchIndex,
+                            index: '',
                             text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
                         }
                     },

@@ -17,11 +17,9 @@ const schema = {
   descriptionField : "plot",
   titleField : "title",
   imageField : "poster",
-  vectorField : "plot_embedding",
-  searchCollection : "embedded_movies",
-  searchIndex : "searchIndex",
-  vectorIndex : "vectorIndex"
+  vectorField : "plot_embedding"
 }
+console.log("log",process.env)
 
 export default function Home(){
   const [query, setQuery] = useState("");

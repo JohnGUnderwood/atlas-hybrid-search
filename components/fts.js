@@ -30,7 +30,7 @@ async function search(query,schema) {
     const pipeline = [
         {
             $search: {
-                index: schema.searchIndex,
+                index: '',
                 text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
             }
         },

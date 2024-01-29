@@ -51,7 +51,7 @@ async function search(queryVector,schema,config) {
     const pipeline = [
         {
             $vectorSearch: {
-                index: schema.vectorIndex,
+                index: '',
                 path: `${schema.vectorField}`,
                 queryVector: queryVector,
                 numCandidates: config.k.val * config.overrequest_factor.val,

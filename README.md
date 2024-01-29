@@ -36,7 +36,7 @@ To get the default setup to work you need to [load sample data](https://www.mong
 
 If you opt not to use the sample data you will need to modify the variables in [`pages/index.js`](pages/index.js#L16) to work with your schema.
 
-You will also need to make sure that the `searchCollection`, `searchIndex`, and `vectorIndex` schema variables are set appropriately. These variables are used when running searches and for hybrid search to join vector results with text search results. For example here: [Reciprocal Rank Fusion](components/rrf.js#L99).
+You will also need to make sure that the `MDB_SEARCHIDX`, and `MDB_VECTORIDX` schema variables are set appropriately. These variables are used when running searches and for hybrid search to join vector results with text search results.
 
 ## Create search indexes
 You must have created your `.env` by copying and renaming the `example.env` provided as the `create-search-indexes.mjs` script uses these values. If you are not using the `sample_mflix.embedded_movies` data then you must modify the search index definitions in the script to match your schema.
