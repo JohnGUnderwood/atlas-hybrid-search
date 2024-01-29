@@ -1,11 +1,15 @@
-import OpenAI from 'openai';
+import { OpenAIClient, AzureKeyCredential,  } from "@azure/openai";
 import { createRouter } from 'next-connect';
 
 class Model {
+    
     constructor(apiKey){
         this.apiKey = apiKey
         try{
-            this.model = new OpenAI({apiKey:apiKey});
+            this.model = new OpenAIClient(
+                process.env.OPENAIENDPOINT,
+                new AzureKeyCredential(process.env.OPENAIAPIKEY)
+            );
         }catch(error){
             console.log(`Connection failed ${error}`)
             throw error;
@@ -14,11 +18,10 @@ class Model {
 
     embed = async function(string){
         try{
-            const resp = await this.model.embeddings.create({
-                model:"text-embedding-ada-002",
-                input:string,
-                encoding_format:"float"
-              })
+            const resp = await this.model.getEmbeddings(
+                process.env.OPENAIDEPLOYMENT,
+                string
+              )
             return resp.data[0].embedding;
         }catch(error){
             console.log(`Failed to create embeddings ${error}`)
@@ -28,13 +31,12 @@ class Model {
 }
 
 async function middleware(req, res, next) {
-    // req.model = await get();
     const model = new Model(process.env.OPENAIAPIKEY);
     req.model = model;
     return next();
 }
   
-const openai = createRouter();
-openai.use(middleware);
+const azure_openai = createRouter();
+azure_openai.use(middleware);
   
-export default openai;
+export default azure_openai;

@@ -9,7 +9,7 @@ function SetParams({config,heading,resetConfig,handleSliderChange}){
                 {Object.keys(config).map(param=>(
                     <>
                     <p key={param+"_title"}>{param}</p>
-                    <p key={param+"_comment"}><i>{config[param]['comment']}</i></p>
+                    <p key={param+"_comment"}><i key={param+"_comment_i"}>{config[param]['comment']}</i></p>
                     <Label key={param}>
                         <input
                             key={param+'_slider'}

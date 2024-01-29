@@ -18,9 +18,10 @@ async function checkCollections(client,db,coll){
 }
 
 async function mongodb(){
-    const uri = process.env.MDB_URI;
-    const db = process.env.MDB_DB;
-    const coll = process.env.MDB_COLL;
+    const uri = process.env.MDBCONNSTR;
+    const db = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";
+    const coll = process.env.MDB_COLL ? process.env.MDB_COLL : "embedded_movies";
+    console.log(db,coll);
     try{
         const thisClient = new MongoClient(uri);
         try{
@@ -28,7 +29,7 @@ async function mongodb(){
             try{
                 var check = await checkCollections(thisClient,db,coll);
                 if(check){
-                    return thisClient;
+                    return {client:thisClient,db:db,coll:coll};
                 }else{
                     console.log(`Collection '${coll}' not found in '${db}'`)
                     throw new Error(`Collection '${coll}' not found in '${db}'`,{cause:"CollectionNotFound"})
@@ -46,10 +47,11 @@ async function mongodb(){
 }
 
 async function middleware(req, res, next) {
-  req.dbClient = await mongodb();
-  req.db = req.dbClient.db(process.env.MDB_DB);
-  req.collection = req.db.collection(process.env.MDB_COLL);
-  return next();
+    const database = await mongodb();
+    req.dbClient = database.client;
+    req.db = req.dbClient.db(database.db);
+    req.collection = req.db.collection(database.coll);
+    return next();
 }
 
 const database = createRouter();
