@@ -2,8 +2,8 @@ import { createRouter } from 'next-connect';
 import database from '../../middleware/database';
 
 const searchCollection = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
-const searchIndex = process.env.SEARCHIDX ? process.env.SEARCHIDX : "searchIndex";
-const vectorIndex = process.env.VECTORIDX ? process.env.VECTORIDX : "vectorIndex";
+const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
+const vectorIndex = process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex";
 
 function setVariables(pipeline){
     // This function sets search/vector index names and collection names in the pipeline.    
