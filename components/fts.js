@@ -2,22 +2,31 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
+import { useToast } from '@leafygreen-ui/toast';
 
 function FTS({query,schema}){
-
-    const [results, setResults] = useState(null);
+    const { pushToast } = useToast();
+    const [response, setResponse] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if(query){
+            setLoading(true);
             search(query,schema)
-            .then(resp => setResults(resp.data.results))
-            .catch(error => console.log(error));
+            .then(resp => {
+                setResponse(resp.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.log(error);
+                pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`})
+            });
         }
     
     },[query]);
 
     return (
-        <Results results={results}/>
+        <Results loading={loading} response={response} noResultsMsg="No results. Type something in the search box."/>
     )
 }
 
@@ -44,15 +53,14 @@ async function search(query,schema) {
         },
         {$limit: k}
     ]
-    return new Promise((resolve) => {
+    return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
             pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {
-            console.log(error)
-            resolve(error.response.data);
+            reject(error.response.data.error);
         })
     });
 }

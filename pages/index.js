@@ -9,8 +9,8 @@ import { useState, } from 'react';
 import Button from '@leafygreen-ui/button';
 import { Tabs, Tab } from '@leafygreen-ui/tabs';
 import AppBanner from '../components/banner';
-
-
+import { ToastProvider, useToast } from '@leafygreen-ui/toast';
+import { Spinner } from "@leafygreen-ui/loading-indicator";
 
 // schema variables
 const schema = {
@@ -20,25 +20,31 @@ const schema = {
   vectorField : "plot_embedding"
 }
 
-export default function Home(){
+const Home = () => {
+  const { pushToast } = useToast();
   const [query, setQuery] = useState("");
   const [queryVector, setQueryVector] = useState(null);
   const [selectedTab, setSelectedTab] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const handleSearch = () => {
     console.log("Search Clicked!")
     if(query && query != ""){
+      setLoading(true);
       embedQuery(query)
       .then(resp => {
         console.log("Query Embedded!")
         setQueryVector(resp);
+        setLoading(false);
       })
-      .catch(error => console.log(error));
+      .catch(error => {
+        console.log(error);
+        pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Failed to encode query using embedding model. ${error}`});
+      });
     }
   }
 
-  const handleQueryChange = (event) => {
-    setQuery(event.target.value);
+  const handleQueryChange = (event) => {setQuery(event.target.value);
   };
 
   return (
@@ -49,6 +55,7 @@ export default function Home(){
       <div><SearchInput value={query} onChange={handleQueryChange} aria-label="some label" style={{marginBottom:"20px"}}></SearchInput></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSearch()} variant="primary">Vector Search</Button></div>
     </div>
+    {loading?<Spinner description="Loading..."/>:<></>}
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
       <Tab name="Fulltext Search">
         <FTS query={query} schema={schema}/>
@@ -74,4 +81,12 @@ async function embedQuery(query){
   }catch (e) {
     throw e;
   }
+}
+
+export default function App(){
+  return (
+    <ToastProvider>
+      <Home/>
+    </ToastProvider>
+  )
 }

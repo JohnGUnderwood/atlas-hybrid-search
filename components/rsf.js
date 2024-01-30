@@ -3,16 +3,17 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
+import { useToast } from '@leafygreen-ui/toast';
 
 function RSF({query,queryVector,schema}){
-    const [results, setResults] = useState(null);
+    const { pushToast } = useToast();
+    const [response, setResponse] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
-        // vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
         fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
-        // fts_normalization : {val:10,range:[0,100],step:5,comment:"Rough scaling of full text search scores"}, 
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
         overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
     }
@@ -59,17 +60,24 @@ function RSF({query,queryVector,schema}){
 
     useEffect(() => {
         if(queryVector){
+            setLoading(true);
             search(query,queryVector,schema,config)
-            .then(resp => setResults(resp.data.results))
-            .catch(error => console.log(error));
+            .then(resp => {
+              setResponse(resp.data);
+              setLoading(false);
+            })
+            .catch(error => {
+              pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
+              console.log(error);
+            });
         }
     
     },[queryVector,config]);
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Relative Score Fusion Params"/>
-            <Results results={results} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true}/>
+            <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Relative Score Fusion Params"/>
+            <Results response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
     )
 }
@@ -151,15 +159,14 @@ async function search(query,queryVector,schema,config) {
         {$sort: {"score": -1}},
         {$limit: config.k.val}
     ]
-    return new Promise((resolve) => {
+    return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
             pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {
-            console.log(error)
-            resolve(error.response.data);
+            reject(error.response.data.error);
         })
     });
 }
