@@ -10,9 +10,9 @@ function RSF({query,queryVector,schema}){
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
-        vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
+        // vector_normalization : {val:40,range:[0,100],step:5,comment:"Rough scaling of vector scores"},
         fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
-        fts_normalization : {val:10,range:[0,100],step:5,comment:"Rough scaling of full text search scores"}, 
+        // fts_normalization : {val:10,range:[0,100],step:5,comment:"Rough scaling of full text search scores"}, 
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
         overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
     }
@@ -95,7 +95,7 @@ async function search(query,queryVector,schema,config) {
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`,
-                vs_score:{$multiply: ["$vs_score", config.vector_scalar.val / config.vector_normalization.val]},
+                vs_score: {$multiply:[config.vector_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$vs_score"]}}]}]}]},//Sigmoid function: 1/(1+exp(-x))
             }
         },
         {
@@ -112,7 +112,7 @@ async function search(query,queryVector,schema,config) {
                     {$addFields: {fts_score: {$meta: "searchScore"}}},
                     {
                         $project: {
-                            fts_score: {$multiply: ["$fts_score", config.fts_scalar.val / config.fts_normalization.val]},
+                            fts_score: {$multiply:[config.fts_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$fts_score"]}}]}]}]},//Using sigmoid function: 1/(1+exp(-x))
                             title:`$${schema.titleField}`,
                             image:`$${schema.imageField}`,
                             description:`$${schema.descriptionField}`

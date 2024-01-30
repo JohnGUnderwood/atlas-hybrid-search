@@ -19,7 +19,6 @@ const schema = {
   imageField : "poster",
   vectorField : "plot_embedding"
 }
-console.log("log",process.env)
 
 export default function Home(){
   const [query, setQuery] = useState("");
