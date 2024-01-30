@@ -1,0 +1,6 @@
+{
+  "name": "Publish Docker Container",
+  "description": "Build and push Docker image to Docker Hub.",
+  "iconName": "docker",
+  "categories": ["Continuous integration", "Dockerfile"]
+}
