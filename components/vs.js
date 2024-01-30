@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
-
+import { useToast } from '@leafygreen-ui/toast';
 
 function VS({queryVector,schema}){
-    const [results, setResults] = useState(null);
+    const { pushToast } = useToast();
+    const [response, setResponse] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
@@ -30,17 +32,24 @@ function VS({queryVector,schema}){
 
     useEffect(() => {
         if(queryVector){
+            setLoading(true);
             search(queryVector,schema,config)
-            .then(resp => setResults(resp.data.results))
-            .catch(error => console.log(error));
+            .then(resp => {
+              setResponse(resp.data);
+              setLoading(false);
+            })
+            .catch(error => {
+              pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
+              console.log(error);
+            });
         }
     
     },[queryVector,config]);
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Vector Search Params"/>
-            <Results results={results} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)}/>
+            <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Vector Search Params"/>
+            <Results response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
     )
 }
@@ -67,15 +76,14 @@ async function search(queryVector,schema,config) {
             }
         }
     ]
-    return new Promise((resolve) => {
+    return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
             pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {
-            console.log(error)
-            resolve(error.response.data);
+            reject(error.response.data.error);
         })
     });
 }
