@@ -21,6 +21,10 @@ async function embed(input){
     }
 }
 
+function wait(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
+  } 
+
 try{
     const client = new MongoClient(process.env.MDBCONNSTR);
     try{
@@ -42,6 +46,8 @@ try{
                     await collection.updateOne({_id:doc._id},{$set:{[schema.vectorField]:await embed(doc[schema.vectorSourceField])}});
                     console.log(`Embedded document: ${doc._id}`);
                     embedded_count += 1;
+                    //add 1/4s time delay so we don't hit rate limits on an endpoint
+                    wait(250);
                 }catch (e){
                     console.log(e)
                 }

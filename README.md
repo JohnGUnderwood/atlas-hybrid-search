@@ -45,7 +45,7 @@ Once you have set you `.env` file and `config.mjs` you will need to start the ap
 
 Run
 ```
-npm build
+npm run build
 npm start
 ```
 
@@ -71,7 +71,7 @@ npm run dev
 
 ## Build for deployment
 ```
-npm build
+npm run build
 npm start
 ```
 
