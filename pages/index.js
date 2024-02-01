@@ -11,14 +11,7 @@ import { Tabs, Tab } from '@leafygreen-ui/tabs';
 import AppBanner from '../components/banner';
 import { ToastProvider, useToast } from '@leafygreen-ui/toast';
 import { Spinner } from "@leafygreen-ui/loading-indicator";
-
-// schema variables
-const schema = {
-  descriptionField : "plot",
-  titleField : "title",
-  imageField : "poster",
-  vectorField : "plot_embedding"
-}
+import schema from '../config.mjs';
 
 const Home = () => {
   const { pushToast } = useToast();
