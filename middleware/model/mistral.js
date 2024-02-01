@@ -27,7 +27,7 @@ class Model {
 }
 
 async function middleware(req,res,next) {
-    const model = new Model(process.env.OPENAIAPIKEY);
+    const model = new Model(process.env.MISTRALAPIKEY);
     req.model = model;
     return next();
 }
