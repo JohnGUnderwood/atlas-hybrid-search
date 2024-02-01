@@ -5,7 +5,7 @@ const schema = {
     titleField : "title",
     imageField : "poster",
     // vector search field
-    vectorField : "mistral_plot_embedding",
+    vectorField : "nomic_plot_embedding",
     // source for embedding when using embed-data.mjs
     vectorSourceField: "plot"
 }
