@@ -19,7 +19,7 @@ async function embed(input){
     }catch (e) {
         console.log(`${e}`);
     }
-  }
+}
 
 try{
     const client = new MongoClient(process.env.MDBCONNSTR);
@@ -30,13 +30,17 @@ try{
             const collection = db.collection(MDB_COLL);
             const cursor = collection
                 .find(
-                    {$and:[{[schema.vectorField]:{$exists:false}},{[schema.vectorSourceField]:{$exists:true}}]}
+                    {$and:[
+                        {$or:[{[schema.vectorField]:{$exists:false}},{[schema.vectorField]:null}]},
+                        {[schema.vectorSourceField]:{$exists:true}}
+                    ]}
                 ).project({[schema.vectorSourceField]:1});
             
             var embedded_count = 0;
             for await (const doc of cursor){
                 try{
-                    collection.updateOne({_id:doc._id},{$set:{[schema.vectorField]:await embed(doc[schema.vectorSourceField])}});
+                    await collection.updateOne({_id:doc._id},{$set:{[schema.vectorField]:await embed(doc[schema.vectorSourceField])}});
+                    console.log(`Embedded document: ${doc._id}`);
                     embedded_count += 1;
                 }catch (e){
                     console.log(e)
