@@ -4,16 +4,38 @@ import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
 import { Spinner } from "@leafygreen-ui/loading-indicator";
+import SetParams from "./set-params";
+
 
 function RERANK({query,queryVector,schema}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    // CONFIGURATION PARAMETERS
+    const defaultConfig = {
+        k : {val:10,range:[1,25],step:1,comment:"Number of results to show"},
+        r : {val:100,range:[10,250],step:10,comment:"Number of results to fetch for reranking"}
+    }
+    const [config, setConfig] = useState(defaultConfig)
+    const resetConfig = () => {
+        setConfig(defaultConfig);
+    }
+
+    const handleSliderChange = (param, newValue) => {
+        setConfig({
+            ...config,
+            [param]: {
+                ...config[param],
+                val:parseFloat(newValue)
+            }
+            });
+      };
+
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -24,14 +46,16 @@ function RERANK({query,queryVector,schema}){
             });
         }
     
-    },[queryVector]);
+    },[queryVector,config]);
 
     return (
-        <>
-        {loading?<Spinner description="Loading..."/>
-        :<Results response={response} noResultsMsg="No results. Select 'Vector Search' to vectorise query for re-rank."/>
-        }
-        </>
+        <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
+            <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Reranking Params"/>
+            {loading
+                ?<Spinner description="Loading..."/>
+                :<Results response={response} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            }
+        </div>
     )
 }
 
@@ -45,9 +69,8 @@ function dotProduct(vector1,vector2){
     return result;
 }
 
-async function search(query,queryVector,schema) {
+async function search(query,queryVector,schema,config) {
     // CONFIGURATION PARAMETERS
-    const k = 10
     const queryVectorDotProduct = dotProduct(queryVector,queryVector);
 
     const pipeline = [
@@ -56,6 +79,9 @@ async function search(query,queryVector,schema) {
                 index: '',
                 text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
             }
+        },
+        {
+            $limit: config.r.val
         },
         {
             $project:{
@@ -141,7 +167,7 @@ async function search(query,queryVector,schema) {
             }
         },
         {$sort:{cosinesim:-1}},
-        {$limit: k}
+        {$limit: config.k.val}
     ]
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
