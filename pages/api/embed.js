@@ -5,7 +5,6 @@ import mistral from '../../middleware/model/mistral';
 import nomic from '../../middleware/model/nomic';
 
 const router = createRouter();
-console.log(process.env);
 if(process.env.OPENAIENDPOINT && process.env.OPENAIDEPLOYMENT && process.env.OPENAIAPIKEY){
     router.use(azure_openai);
     console.log("Using Azure OpenAI embeddings");

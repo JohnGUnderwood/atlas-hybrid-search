@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
+import { Spinner } from "@leafygreen-ui/loading-indicator";
 
 function RERANK({query,queryVector,schema}){
     const { pushToast } = useToast();
@@ -12,7 +13,7 @@ function RERANK({query,queryVector,schema}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config)
+            search(query,queryVector,schema)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -26,22 +27,28 @@ function RERANK({query,queryVector,schema}){
     },[queryVector]);
 
     return (
-        <Results loading={loading} response={response} noResultsMsg="No results. Select 'Vector Search' to vectorise query for re-rank."/>
+        <>
+        {loading?<Spinner description="Loading..."/>
+        :<Results response={response} noResultsMsg="No results. Select 'Vector Search' to vectorise query for re-rank."/>
+        }
+        </>
     )
 }
 
 export default RERANK;
 
+function dotProduct(vector1,vector2){
+    var result = 0;
+    for (var i=0;i<vector1.length;i++){
+        result += vector1[i]*vector2[i]
+    }
+    return result;
+}
+
 async function search(query,queryVector,schema) {
     // CONFIGURATION PARAMETERS
     const k = 10
-    const queryVectorDotProduct = () => {
-        var result;
-        for (var i=0;i<queryVector.length;i++){
-            result += queryVector[i]*queryVector[i]
-        }
-        return result
-    }
+    const queryVectorDotProduct = dotProduct(queryVector,queryVector);
 
     const pipeline = [
         {
@@ -65,68 +72,75 @@ async function search(query,queryVector,schema) {
                 // magnitude(A)*magnitude(B) is the same as sqrt(dotproduct(A,A)*dotproduct(B,B))
                 // Input vectors must have the same size (dimension)
                 cosinesim:{
-                    $divide:[
-                        //dot product of pair of vector with queryVector
-                        {
-                            $reduce:{
-                                input:{
-                                    // Create array of product of vector pair elements
-                                    $map:{
-                                        input:{$range: [0, {$size:"$vector"}]},
-                                        as: "index",
-                                        in: {
-                                            //Calculate dot product of each pair of elements in two vectors
-                                            $multiply:[
-                                                {$arrayElemAt:["$vector","$$index"]},
-                                                {$arrayElemAt:[queryVector,"$$index"]}
-                                            ]
+                    $cond:{
+                        if:{ $ne : [{ $type: '$vector' }, 'missing'] },
+                        then:{
+                            $divide:[
+                                //dot product of pair of vector with queryVector
+                                {
+                                    $reduce:{
+                                        input:{
+                                            // Create array of product of vector pair elements
+                                            $map:{
+                                                input:{$range: [0, {$size:"$vector"}]},
+                                                as: "index",
+                                                in: {
+                                                    //Calculate dot product of each pair of elements in two vectors
+                                                    $multiply:[
+                                                        {$arrayElemAt:["$vector","$$index"]},
+                                                        {$arrayElemAt:[queryVector,"$$index"]}
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        initialValue:0.0,
+                                        // Sum up products to get dot product of vector pair
+                                        in:{
+                                            $add:["$$value","$$this"]
                                         }
                                     }
                                 },
-                                initialValue:0.0,
-                                // Sum up products to get dot product of vector pair
-                                in:{
-                                    $add:["$$value","$$this"]
-                                }
-                            }
-                        },
-                        //product of magnitudes of vectors
-                        {
-                            $sqrt:{
-                                $multiply:[
-                                    // dot product of vector with itself
-                                    {
-                                        $reduce:{
-                                            input:{
-                                                // Create array of product of vector pair elements
-                                                $map:{
-                                                    input:{$range: [0, {$size:"$vector"}]},
-                                                    as: "index",
-                                                    in: {
-                                                        //Calculate dot product of each pair of elements in two vectors
-                                                        $multiply:[
-                                                            {$arrayElemAt:["$vector","$$index"]},
-                                                            {$arrayElemAt:["$vector","$$index"]}
-                                                        ]
+                                //product of magnitudes of vectors
+                                {
+                                    $sqrt:{
+                                        $multiply:[
+                                            // dot product of vector with itself
+                                            {
+                                                $reduce:{
+                                                    input:{
+                                                        // Create array of product of vector pair elements
+                                                        $map:{
+                                                            input:{$range: [0, {$size:"$vector"}]},
+                                                            as: "index",
+                                                            in: {
+                                                                //Calculate dot product of each pair of elements in two vectors
+                                                                $multiply:[
+                                                                    {$arrayElemAt:["$vector","$$index"]},
+                                                                    {$arrayElemAt:["$vector","$$index"]}
+                                                                ]
+                                                            }
+                                                        }
+                                                    },
+                                                    initialValue:0.0,
+                                                    // Sum up products to get dot product of vector pair
+                                                    in:{
+                                                        $add:["$$value","$$this"]
                                                     }
                                                 }
                                             },
-                                            initialValue:0.0,
-                                            // Sum up products to get dot product of vector pair
-                                            in:{
-                                                $add:["$$value","$$this"]
-                                            }
-                                        }
-                                    },
-                                    // dot product of query vector with itself
-                                    queryVectorDotProduct
-                                ]
-                            }
-                        }
-                    ]
+                                            // dot product of query vector with itself
+                                            queryVectorDotProduct
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        else:0
+                    }
                 }
             }
         },
+        {$sort:{cosinesim:-1}},
         {$limit: k}
     ]
     return new Promise((resolve,reject) => {
