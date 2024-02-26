@@ -1,11 +1,11 @@
-// Relative Score Fusion
+// Reciprocal Rank Fusion
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 
-function RSF({query,queryVector,schema}){
+function RRF({query,queryVector,schema}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -56,7 +56,7 @@ function RSF({query,queryVector,schema}){
     )
 }
 
-export default RSF;
+export default RRF;
 
 async function search(query,queryVector,schema,config) {
     
