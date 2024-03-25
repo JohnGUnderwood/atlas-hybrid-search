@@ -45,11 +45,15 @@ async function mongodb(){
     }
 }
 
+let connection;
+
 async function middleware(req, res, next) {
-    const database = await mongodb();
-    req.dbClient = database.client;
-    req.db = req.dbClient.db(database.db);
-    req.collection = req.db.collection(database.coll);
+    if (!connection) {
+        connection = await mongodb();
+    }
+    req.dbClient = connection.client;
+    req.db = req.dbClient.db(connection.db);
+    req.collection = req.db.collection(connection.coll);
     return next();
 }
 
