@@ -4,6 +4,7 @@ import RSF from '../components/rsf';
 import RRF from '../components/rrf';
 import FTS from '../components/fts';
 import VS from '../components/vs';
+import RERANK from '../components/fts-rerank';
 import {SearchInput} from '@leafygreen-ui/search-input';
 import { useState, } from 'react';
 import Button from '@leafygreen-ui/button';
@@ -52,6 +53,9 @@ const Home = () => {
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
       <Tab name="Fulltext Search">
         <FTS query={query} schema={schema}/>
+      </Tab>
+      <Tab name="FTS with Cosine Re-ranking">
+        <RERANK query={query} queryVector={queryVector} schema={schema}/>
       </Tab>
       <Tab name="Vector Search">
         <VS queryVector={queryVector} schema={schema}/>

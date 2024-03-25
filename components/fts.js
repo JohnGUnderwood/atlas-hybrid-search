@@ -26,7 +26,7 @@ function FTS({query,schema}){
     },[query]);
 
     return (
-        <Results loading={loading} response={response} noResultsMsg="No results. Type something in the search box."/>
+        <Results response={response} noResultsMsg="No results. Type something in the search box."/>
     )
 }
 

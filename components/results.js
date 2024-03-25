@@ -13,6 +13,7 @@ function Results({response,msg,hybrid,noResultsMsg}){
     const [open, setOpen] = useState(false);
     const results = response? response.results.length > 0? response.results : null : null;
     const query = response? response.query : null;
+    const time = response? response.time : null;
 
     return (
         <div>
@@ -21,10 +22,7 @@ function Results({response,msg,hybrid,noResultsMsg}){
             <div style={{paddingLeft:"40px",paddingRight:"40px"}}>
                 <div style={{paddingTop:"25px"}}>
                     <div style={{display:"grid",gridTemplateColumns:"50% 50%",gap:"5px",alignItems:"start"}}>
-                        {msg ?
-                        <div style={{padding:"4px 16px"}}><span style={{borderRadius:"5px",backgroundColor:palette.blue.light3, padding:"2px 4px", float:"left"}}><em>{msg}</em></span></div>
-                        :<div></div>
-                        }
+                        <div style={{padding:"4px 16px"}}><span style={{borderRadius:"5px",backgroundColor:palette.blue.light3, padding:"2px 4px", float:"left"}}><em>{msg? `${msg}, query took ${time}ms`:`query took ${time}ms`}</em></span></div>
                         <div style={{padding:"4px 16px"}}><Button style={{float:"right"}} onClick={()=>setOpen(true)} variant="default">Show Query</Button></div>
                     </div>
                     {

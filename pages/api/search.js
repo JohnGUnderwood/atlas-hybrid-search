@@ -29,8 +29,11 @@ function setVariables(pipeline){
 async function getResults(collection,pipeline){
     try{
         const newPipeline = setVariables(pipeline);
+        const start = new Date();
         const results = await collection.aggregate(newPipeline).toArray();
-        return {results:results,query:newPipeline};
+        const end   = new Date();
+        const time = (end - start);
+        return {results:results,query:newPipeline,time:time};
     }catch(error){
         throw error
     }
