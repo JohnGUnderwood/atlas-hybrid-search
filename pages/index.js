@@ -54,9 +54,6 @@ const Home = () => {
       <Tab name="Fulltext Search">
         <FTS query={query} schema={schema}/>
       </Tab>
-      <Tab name="FTS with Cosine Re-ranking">
-        <RERANK query={query} queryVector={queryVector} schema={schema}/>
-      </Tab>
       <Tab name="Vector Search">
         <VS queryVector={queryVector} schema={schema}/>
       </Tab>
