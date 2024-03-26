@@ -4,7 +4,6 @@ import RSF from '../components/rsf';
 import RRF from '../components/rrf';
 import FTS from '../components/fts';
 import VS from '../components/vs';
-import RERANK from '../components/fts-rerank';
 import {SearchInput} from '@leafygreen-ui/search-input';
 import { useState, } from 'react';
 import Button from '@leafygreen-ui/button';
