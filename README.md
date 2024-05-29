@@ -43,8 +43,11 @@ If not using the sample embedded data provided by MongoDB you will need to use d
 
 Once you have set you `.env` file and `config.mjs` you will need to start the app. This hosts a local embedding API that uses the model provider corresponding to the supplied API key.
 
+Read your environment variables in each terminal window where you execute commands.
+
 Run
 ```
+source .env
 npm run build
 npm start
 ```
@@ -53,6 +56,7 @@ Now you can start the embedding process. NOTE - this process could be long runni
 
 Run
 ```
+source .env
 node embed-data.mjs
 ```
 
@@ -61,16 +65,19 @@ You must have created your `.env` by copying and renaming the `example.env` prov
 
 Run
 ```
+source .env
 node create-search-indexes.mjs
 ```
 
 ## Run the app
 ```
+source .env
 npm run dev
 ```
 
 ## Build for deployment
 ```
+source .env
 npm run build
 npm start
 ```
