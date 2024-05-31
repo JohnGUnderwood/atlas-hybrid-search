@@ -14,8 +14,9 @@ class Model {
 
     embed = async function(string){
         try{
+            const model = process.env.OPENAIEMBEDDINGMODEL || "text-embedding-ada-002";
             const resp = await this.model.embeddings.create({
-                model:process.env.OPENAIEMBEDDINGMODEL,
+                model:model,
                 input:string,
                 encoding_format:"float"
               })
