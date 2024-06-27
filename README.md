@@ -31,6 +31,13 @@ In the app the API call to embed the query is made only when the 'vector search'
 3. Load sample data into Atlas (optional to make the default examples work)
 4. Create search indexes
 
+## Install the app packages and build the app
+Go to the route of the project (where the `package.json` file is) and run:
+
+```
+npm install
+```
+
 ## Load MongoDB Sample Data (optional)
 To get the default setup to work you need to [load sample data](https://www.mongodb.com/docs/atlas/sample-data/) into your Atlas Cluster.
 
@@ -69,13 +76,13 @@ source .env
 node create-search-indexes.mjs
 ```
 
-## Run the app
+## Run the app in development mode
 ```
 source .env
 npm run dev
 ```
 
-## Build for deployment
+## Build for deployment and start the app
 ```
 source .env
 npm run build
