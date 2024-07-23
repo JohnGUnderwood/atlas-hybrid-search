@@ -15,7 +15,7 @@ For both RSF and RRF algorithms the weighted and/or normalized text and vector s
 ## Embeddings
 In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. Byt default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
 
-At the moment the app is set so you can switch between OpenAI and Azure OpenAI. To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file.
+At the moment the app is set so you can switch between [OpenAI](https://platform.openai.com/docs/guides/embeddings), [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/understand-embeddings), [Nomic](https://docs.nomic.ai/reference/endpoints/nomic-embed-text) and [Mistral](https://docs.mistral.ai/capabilities/embeddings/). To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file.
 
 
 If you are confident with code you could add another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/model).
@@ -31,6 +31,13 @@ In the app the API call to embed the query is made only when the 'vector search'
 3. Load sample data into Atlas (optional to make the default examples work)
 4. Create search indexes
 
+## Install the app packages and build the app
+Go to the route of the project (where the `package.json` file is) and run:
+
+```
+npm install
+```
+
 ## Load MongoDB Sample Data (optional)
 To get the default setup to work you need to [load sample data](https://www.mongodb.com/docs/atlas/sample-data/) into your Atlas Cluster.
 
@@ -43,8 +50,11 @@ If not using the sample embedded data provided by MongoDB you will need to use d
 
 Once you have set you `.env` file and `config.mjs` you will need to start the app. This hosts a local embedding API that uses the model provider corresponding to the supplied API key.
 
+Read your environment variables in each terminal window where you execute commands.
+
 Run
 ```
+source .env
 npm run build
 npm start
 ```
@@ -53,6 +63,7 @@ Now you can start the embedding process. NOTE - this process could be long runni
 
 Run
 ```
+source .env
 node embed-data.mjs
 ```
 
@@ -61,16 +72,19 @@ You must have created your `.env` by copying and renaming the `example.env` prov
 
 Run
 ```
+source .env
 node create-search-indexes.mjs
 ```
 
-## Run the app
+## Run the app in development mode
 ```
+source .env
 npm run dev
 ```
 
-## Build for deployment
+## Build for deployment and start the app
 ```
+source .env
 npm run build
 npm start
 ```

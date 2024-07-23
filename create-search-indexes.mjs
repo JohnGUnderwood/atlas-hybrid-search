@@ -1,5 +1,6 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, MongoError } from 'mongodb';
 import dotenv from 'dotenv';
+import schema from './config.mjs';
 dotenv.config();
 
 const searchIndex = {
@@ -8,23 +9,15 @@ const searchIndex = {
     "mappings": {
       "dynamic": false,
       "fields": {
-        "plot": {
+        [`${schema.descriptionField}`]: {
           "type": "string"
         },
-        "title": [
+        [`${schema.titleField}`]: [
           {
             "type": "string"
           },
           {
             "type": "autocomplete"
-          }
-        ],
-        "genres":[
-          {
-            "type":"stringFacet"
-          },
-          {
-            "type":"token"
           }
         ]
       }
@@ -35,12 +28,12 @@ const searchIndex = {
 
 const vectorIndex = {
   name: "vectorIndex",
+  type: "vectorSearch",
   definition: {
-    "type": "vectorSearch",
     "fields": [
       {
         "type": "vector",
-        "path": "plot_embedding",
+        "path": `${schema.vectorField}`,
         "numDimensions": 1536,
         "similarity": "cosine"
       }
@@ -54,6 +47,20 @@ const MDB_COLL = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_
 console.log("Database: ", MDB_DB);
 console.log("Collection: ", MDB_COLL);
 
+async function create(collection,index){
+  try{
+    await collection.createSearchIndex(index);
+  }catch(error){
+    if(error instanceof MongoError && error.codeName == 'IndexAlreadyExists'){
+      console.log(`Index ${index.name} already exists`);
+    }
+    else{
+      console.log(`Creating index ${index.name} failed ${error}`);
+      throw error;
+    }
+  }
+}
+
 try{
   const client = new MongoClient(process.env.MDBCONNSTR);
   try{
@@ -61,11 +68,13 @@ try{
       try{
         const db = client.db(MDB_DB);
         const collection = db.collection(MDB_COLL);
-        await collection.createSearchIndex(searchIndex);
-        // TO DO: this will not work until a command is added to the driver for creating vector indexes.
-        // await collection.createSearchIndex(vectorIndex);
-        console.log(collection.listSearchIndexes());
-        console.log("You must now manually create the vector index on your collection.")
+        await create(collection,searchIndex);
+        await create(collection,vectorIndex);
+        console.log('Existing search indexes...');
+        const indexes = await collection.listSearchIndexes().toArray();
+        for(const index of indexes){
+          console.log(index.name,'\t',index.status);
+        }
       }catch(error){
         console.log(`Connection failed ${error}`);
         throw error;
