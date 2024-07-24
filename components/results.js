@@ -41,6 +41,12 @@ function Results({response,msg,hybrid,noResultsMsg}){
                                             <Description key={`${r._id}desc`}>
                                                 {r.description}
                                             </Description>
+                                            {Object.keys(r).filter(k => !["_id","score","title","image","description"].includes(k)).map(k => (
+                                                Array.isArray(r[k])
+                                                ? (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k].join(", ")}</span></p>)
+                                                : (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k]}</span></p>)
+                                                
+                                            ))}
                                             {hybrid ?
                                                 <HybridScore result={r} key={`${r._id}scores`}/>
                                             :<></>

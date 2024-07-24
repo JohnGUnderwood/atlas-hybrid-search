@@ -4,6 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
+import searchStage from "./searchStage";
 
 function RSF({query,queryVector,schema}){
     const { pushToast } = useToast();
@@ -103,6 +104,7 @@ async function search(query,queryVector,schema,config) {
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`,
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {}),
                 vs_score: {$multiply:[config.vector_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$vs_score"]}}]}]}]},//Sigmoid function: 1/(1+exp(-x))
             }
         },
@@ -110,12 +112,7 @@ async function search(query,queryVector,schema,config) {
             $unionWith: {
                 coll: '',
                 pipeline: [
-                    {
-                        $search: {
-                            index: '',
-                            text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
-                        }
-                    },
+                    searchStage(query,schema),
                     {$limit: config.k.val * 2},
                     {$addFields: {fts_score: {$meta: "searchScore"}}},
                     {
@@ -123,7 +120,8 @@ async function search(query,queryVector,schema,config) {
                             fts_score: {$multiply:[config.fts_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$fts_score"]}}]}]}]},//Using sigmoid function: 1/(1+exp(-x))
                             title:`$${schema.titleField}`,
                             image:`$${schema.imageField}`,
-                            description:`$${schema.descriptionField}`
+                            description:`$${schema.descriptionField}`,
+                            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
                         }
                     },
                 ],
@@ -136,7 +134,8 @@ async function search(query,queryVector,schema,config) {
                 fts_score: {$max: "$fts_score"},
                 title:{$first:"$title"},
                 image:{$first:"$image"},
-                description:{$first:"$description"}
+                description:{$first:"$description"},
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: {$first:`$${f}`}}), {})
             }
         },
         {
@@ -147,6 +146,7 @@ async function search(query,queryVector,schema,config) {
                 description:1,
                 vs_score: {$ifNull: ["$vs_score", 0]},
                 fts_score: {$ifNull: ["$fts_score", 0]},
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
             }
         },
         {
