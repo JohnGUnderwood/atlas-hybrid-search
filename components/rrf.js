@@ -4,6 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
+import searchStage from "./searchStage";
 
 function RRF({query,queryVector,schema}){
     const { pushToast } = useToast();
@@ -95,19 +96,15 @@ async function search(query,queryVector,schema,config) {
             _id: "$docs._id", 
             title:`$docs.${schema.titleField}`,
             image:`$docs.${schema.imageField}`,
-            description:`$docs.${schema.descriptionField}`
+            description:`$docs.${schema.descriptionField}`,
+            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$docs.${f}`}), {})
           }
         },
         {
           $unionWith: {
             coll: '',
             pipeline: [
-              {
-                $search: {
-                    index: '',
-                    text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
-                }
-              },
+              searchStage(query,schema),
               {
                 $limit: config.k.val
               },
@@ -139,7 +136,8 @@ async function search(query,queryVector,schema,config) {
                     _id:"$docs._id",
                     title:`$docs.${schema.titleField}`,
                     image:`$docs.${schema.imageField}`,
-                    description:`$docs.${schema.descriptionField}`
+                    description:`$docs.${schema.descriptionField}`,
+                    ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
                 }
               }
             ]
@@ -152,7 +150,8 @@ async function search(query,queryVector,schema,config) {
             fts_score: {$max: "$fts_score"},
             title:{$first:"$title"},
             image:{$first:"$image"},
-            description:{$first:"$description"}
+            description:{$first:"$description"},
+            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: {$first:`$${f}`}}), {})
           }
         },
         {
@@ -163,6 +162,7 @@ async function search(query,queryVector,schema,config) {
             description:1,
             vs_score: {$ifNull: ["$vs_score", 0]},
             fts_score: {$ifNull: ["$fts_score", 0]},
+            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
           }
         },
         {

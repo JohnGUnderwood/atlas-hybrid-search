@@ -26,6 +26,18 @@ const searchIndex = {
   
 }
 
+for(const searchField of schema.searchFields){
+  searchIndex.definition.mappings.fields[searchField] = {
+    "type": "string",
+    "analyzer":"lucene.standard",
+    "multi": {
+      "keywordAnalyzer": {
+        "type": "string",
+        "analyzer": "lucene.keyword"
+      }
+    }
+  }
+}
 const vectorIndex = {
   name: "vectorIndex",
   type: "vectorSearch",

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
+import searchStage from "./searchStage";
 
 function FTS({query,schema}){
     const { pushToast } = useToast();
@@ -37,19 +38,28 @@ async function search(query,schema) {
     const k = 10
 
     const pipeline = [
-        {
-            $search: {
-                index: '',
-                text: {query: query, path: [`${schema.titleField}`,`${schema.descriptionField}`]},
-            }
-        },
+        // {
+        //     $search: {
+        //         index: '',
+        //         text: {query: query, 
+        //             path: [
+        //             `${schema.titleField}`,
+        //             `${schema.descriptionField}`,
+        //             ...schema.searchFields,
+        //             ...schema.searchFields.map(f => ({'value':`${f}`,'multi':'keywordAnalyzer'}))
+        //             ]
+        //         },
+        //     }
+        // },
+        searchStage(query,schema),
         {
             $project: {
                 score: {$meta: "searchScore"},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
-                description:`$${schema.descriptionField}`
-            }
+                description:`$${schema.descriptionField}`,
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+            }            
         },
         {$limit: k}
     ]

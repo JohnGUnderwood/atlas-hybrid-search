@@ -12,6 +12,10 @@ import AppBanner from '../components/banner';
 import { ToastProvider, useToast } from '@leafygreen-ui/toast';
 import { Spinner } from "@leafygreen-ui/loading-indicator";
 import schema from '../config.mjs';
+import Modal from '@leafygreen-ui/modal';
+import { Subtitle } from '@leafygreen-ui/typography';
+import Code from '@leafygreen-ui/code';
+import ExpandableCard from '@leafygreen-ui/expandable-card';
 
 const Home = () => {
   const { pushToast } = useToast();
@@ -19,6 +23,9 @@ const Home = () => {
   const [queryVector, setQueryVector] = useState(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [indexes, setIndexes] = useState(null);
+  const [sample, setSample] = useState(null);
+  const [open, setOpen] = useState(false);
 
   const handleSearch = () => {
     console.log("Search Clicked!")
@@ -37,8 +44,35 @@ const Home = () => {
     }
   }
 
-  const handleQueryChange = (event) => {setQuery(event.target.value);
-  };
+  const handleShowIndexes = () => {
+    console.log("Show Indexes Clicked!")
+    getIndexes()
+    .then(resp => {
+      console.log("Indexes Fetched!")
+      setIndexes(resp);
+      setOpen("indexes");
+    })
+    .catch(error => {
+      console.log(error);
+      pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Failed to fetch indexes. ${error}`});
+    });
+  }
+
+  const handleSampleDoc = () => {
+    console.log("Sample Doc Clicked!")
+    getSample()
+    .then(resp => {
+      console.log("Sample Doc Fetched!")
+      setSample(resp);
+      setOpen("sample");
+    })
+    .catch(error => {
+      console.log(error);
+      pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Failed to fetch sample. ${error}`});
+    });
+  }
+
+  const handleQueryChange = (event) => {setQuery(event.target.value);};
 
   return (
     <>
@@ -47,6 +81,10 @@ const Home = () => {
     <div style={{display:"grid",gridTemplateColumns:"90% 120px",gap:"10px",alignItems:"start"}}>
       <div><SearchInput value={query} onChange={handleQueryChange} aria-label="some label" style={{marginBottom:"20px"}}></SearchInput></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSearch()} variant="primary">Vector Search</Button></div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"120px 120px",gap:"10px",alignItems:"start"}}>
+      <div style={{maxWidth:"120px"}}><Button onClick={()=>handleShowIndexes()}>Show Indexes</Button></div>
+      <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSampleDoc()}>Sample Doc</Button></div>
     </div>
     {loading?<Spinner description="Loading..."/>:<></>}
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
@@ -63,6 +101,34 @@ const Home = () => {
         <RRF query={query} queryVector={queryVector} schema={schema}/>
       </Tab>
     </Tabs>
+    <Modal open={open} setOpen={setOpen}>
+      { open == "indexes" ?
+        <>
+        <ExpandableCard
+          title="Atlas Search"
+          darkMode={false}
+        >
+          <Code language={'javascript'}>
+            {indexes ? JSON.stringify(indexes.searchIndex,null,2) : "" }
+          </Code>
+        </ExpandableCard>
+        <br/>    
+        <ExpandableCard
+          title="Atlas Vector Search"
+          darkMode={false}
+        >
+          <Code language={'javascript'}>
+            {indexes ? JSON.stringify(indexes.vectorIndex,null,2) : "" }
+          </Code>
+        </ExpandableCard>
+        </>
+        : open == "sample" ?
+          <Code language={'javascript'}>
+            {sample ? JSON.stringify(sample,null,2) : "" }
+          </Code>
+          : <></>
+      }
+    </Modal>
     </>
   )
 }
@@ -71,6 +137,24 @@ async function embedQuery(query){
   try{
     const embeddingResp = await axios.get('api/embed?terms='+query);
     return embeddingResp.data;
+  }catch (e) {
+    throw e;
+  }
+}
+
+async function getIndexes(){
+  try{
+    const response = await axios.get('api/indexes');
+    return response.data;
+  }catch (e) {
+    throw e;
+  }
+}
+
+async function getSample(){
+  try{
+    const response = await axios.get('api/sample');
+    return response.data;
   }catch (e) {
     throw e;
   }

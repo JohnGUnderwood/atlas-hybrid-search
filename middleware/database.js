@@ -17,10 +17,23 @@ async function checkCollections(client,db,coll){
     }
 }
 
+async function getSearchIndex(client,db,coll,indexName){
+    const indexes = await client.db(db).collection(coll).listSearchIndexes(indexName).toArray();
+    if(indexes.length > 0){
+        return indexes[0]['latestDefinition'];
+    }else{
+        console.log(`No index ${indexName} found in collection: ${coll}`,{cause:"NoSearchIndexes"})
+        throw new Error(`No indexes found in collection: ${coll}`,{cause:"NoSearchIndexes"})
+    }
+}
+
 async function mongodb(){
     const uri = process.env.MDBCONNSTR;
     const db = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";
     const coll = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
+    const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
+    const vectorIndex = process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex";
+
     try{
         const thisClient = new MongoClient(uri);
         try{
@@ -28,7 +41,17 @@ async function mongodb(){
             try{
                 var check = await checkCollections(thisClient,db,coll);
                 if(check){
-                    return {client:thisClient,db:db,coll:coll};
+                    var searchIndexDef = null;
+                    var vectorIndexDef = null;
+                    try{
+                        searchIndexDef = await getSearchIndex(thisClient,db,coll,searchIndex);
+                        vectorIndexDef = await getSearchIndex(thisClient,db,coll,vectorIndex);
+                    }
+                    catch(error){
+                        console.log(`Fetching index failed ${error}`)
+                        throw error;
+                    }
+                    return {client:thisClient,db:db,coll:coll,searchIndex:searchIndexDef,vectorIndex:vectorIndexDef};
                 }else{
                     console.log(`Collection '${coll}' not found in '${db}'`)
                     throw new Error(`Collection '${coll}' not found in '${db}'`,{cause:"CollectionNotFound"})
@@ -54,6 +77,8 @@ async function middleware(req, res, next) {
     req.dbClient = connection.client;
     req.db = req.dbClient.db(connection.db);
     req.collection = req.db.collection(connection.coll);
+    req.searchIndex = connection.searchIndex;
+    req.vectorIndex = connection.vectorIndex; 
     return next();
 }
 

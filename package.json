@@ -14,6 +14,7 @@
     "@leafygreen-ui/button": "^21.0.11",
     "@leafygreen-ui/card": "^10.0.6",
     "@leafygreen-ui/code": "^14.2.18",
+    "@leafygreen-ui/expandable-card": "^3.2.3",
     "@leafygreen-ui/loading-indicator": "^2.0.8",
     "@leafygreen-ui/logo": "^8.0.12",
     "@leafygreen-ui/modal": "^16.0.4",
