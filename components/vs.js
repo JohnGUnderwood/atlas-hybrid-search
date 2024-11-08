@@ -69,7 +69,7 @@ async function search(queryVector,schema,config) {
         },
         {
             $project: {
-                score: {$meta: "searchScore"},
+                score: {$meta: "vectorSearchScore"},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`

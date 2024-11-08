@@ -49,7 +49,7 @@ function Results({response,msg,hybrid,noResultsMsg}){
                                             ))}
                                             {hybrid ?
                                                 <HybridScore result={r} key={`${r._id}scores`}/>
-                                            :<></>
+                                            :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                         </div>
                                     </div>

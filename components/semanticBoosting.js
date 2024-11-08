@@ -15,6 +15,7 @@ function SemanticBoosting({query,queryVector,schema}){
     const defaultConfig = {
         vector_results : {val:20,range:[5,50],step:5,comment:"How many vector results to fetch"},
         overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"},
+        vector_weight : {val:1,range:[1,5],step:1,comment:"Weight the vector score before boosting"},
         k : {val:10,range:[1,25],step:1,comment:"Number of final results"},
     }
     const [config, setConfig] = useState(defaultConfig)
@@ -81,6 +82,13 @@ async function search(query,queryVector,schema,config) {
     let vector_boosts = [];
     try{
         vector_boosts = await axios.post(`api/search`,{pipeline : vector_pipeline});
+        vector_boosts = vector_boosts.data.results.map(r => {
+            return {
+                field: r.field,
+                value: r.value,
+                score: r.score*config.vector_weight.val
+            }
+        });
     }catch(error){
         return new Promise((resolve,reject) => {error.response.data.error});
     };
@@ -102,7 +110,7 @@ async function search(query,queryVector,schema,config) {
         axios.post(`api/search`,
             { 
                 pipeline : lexical_pipeline,
-                boosts:vector_boosts.data.results,
+                boosts:vector_boosts,
             },
         ).then(response => resolve(response))
         .catch((error) => {
