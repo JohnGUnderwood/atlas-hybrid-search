@@ -16,7 +16,7 @@ function RRF({query,queryVector,schema}){
       vector_penalty : {val:1,range:[0,20],step:1,comment:"Penalise vector results score"},
       fts_penalty : {val:10,range:[0,20],step:1,comment:"Penalise text search results score"}, 
       k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-      overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
+      overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {

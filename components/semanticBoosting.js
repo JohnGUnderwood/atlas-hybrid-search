@@ -14,9 +14,9 @@ function SemanticBoosting({query,queryVector,schema}){
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_results : {val:20,range:[5,50],step:5,comment:"How many vector results to fetch"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"},
-        vector_weight : {val:1,range:[1,5],step:1,comment:"Weight the vector score before boosting"},
         k : {val:10,range:[1,25],step:1,comment:"Number of final results"},
+        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"},
+        vector_weight : {val:1,range:[1,5],step:1,comment:"Weight the vector score before boosting"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
