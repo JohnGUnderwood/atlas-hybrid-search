@@ -9,6 +9,7 @@ const searchIndex = {
     "mappings": {
       "dynamic": false,
       "fields": {
+        "_id":{"type":"objectId"},
         [`${schema.descriptionField}`]: {
           "type": "string"
         },

@@ -16,7 +16,7 @@ function RSF({query,queryVector,schema}){
         vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
         fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
+        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {

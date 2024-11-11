@@ -1,5 +1,6 @@
 import { createRouter } from 'next-connect';
 import database from '../../middleware/database';
+import { ObjectId } from 'mongodb';
 
 const searchCollection = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
 const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
@@ -48,7 +49,22 @@ router.post(async (req, res) => {
         console.log(`Request missing 'pipeline' data`)
         res.status(400).send(`Request missing 'pipeline' data`);
     }else{
-        const pipeline = req.body.pipeline
+        var pipeline = req.body.pipeline
+        if(req.body.boosts && req.body.pipeline[0].$search){
+            req.body.boosts.forEach((boost) => {
+                const value = ObjectId.createFromHexString(boost.value);
+                console.log(value);
+                req.body.pipeline[0].$search.compound.should.push(
+                    {
+                        equals:{
+                            path:boost.field,
+                            value:value,
+                            score:{boost:{value:boost.score}}
+                        }
+                    }
+                )
+            });
+        }
         try{
             const response = await getResults(req.collection,pipeline);
             res.status(200).json(response);

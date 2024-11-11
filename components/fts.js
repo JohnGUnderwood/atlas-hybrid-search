@@ -27,7 +27,7 @@ function FTS({query,schema}){
     },[query]);
 
     return (
-        <Results response={response} noResultsMsg="No results. Type something in the search box."/>
+        <Results response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
     )
 }
 
@@ -38,19 +38,6 @@ async function search(query,schema) {
     const k = 10
 
     const pipeline = [
-        // {
-        //     $search: {
-        //         index: '',
-        //         text: {query: query, 
-        //             path: [
-        //             `${schema.titleField}`,
-        //             `${schema.descriptionField}`,
-        //             ...schema.searchFields,
-        //             ...schema.searchFields.map(f => ({'value':`${f}`,'multi':'keywordAnalyzer'}))
-        //             ]
-        //         },
-        //     }
-        // },
         searchStage(query,schema),
         {
             $project: {

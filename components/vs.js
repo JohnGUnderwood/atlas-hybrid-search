@@ -13,7 +13,7 @@ function VS({queryVector,schema}){
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiplication factor of k for numCandidates for HNSW search"}
+        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -69,7 +69,7 @@ async function search(queryVector,schema,config) {
         },
         {
             $project: {
-                score: {$meta: "searchScore"},
+                score: {$meta: "vectorSearchScore"},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`
