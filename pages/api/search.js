@@ -53,7 +53,6 @@ router.post(async (req, res) => {
         if(req.body.boosts && req.body.pipeline[0].$search){
             req.body.boosts.forEach((boost) => {
                 const value = ObjectId.createFromHexString(boost.value);
-                console.log(value);
                 req.body.pipeline[0].$search.compound.should.push(
                     {
                         equals:{
