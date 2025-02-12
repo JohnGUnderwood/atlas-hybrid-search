@@ -22,7 +22,21 @@ const searchIndex = {
           }
         ]
       }
-    }
+    },
+    "analyzers": [
+      {
+        "charFilters": [],
+        "name": "keyword",
+        "tokenFilters": [
+          {
+            "type": "lowercase"
+          }
+        ],
+        "tokenizer": {
+          "type": "keyword"
+        }
+      }
+    ]
   }
   
 }
@@ -34,7 +48,7 @@ for(const searchField of schema.searchFields){
     "multi": {
       "keywordAnalyzer": {
         "type": "string",
-        "analyzer": "lucene.keyword"
+        "analyzer": "keyword"
       }
     }
   }

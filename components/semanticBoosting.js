@@ -5,6 +5,8 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import searchStage from "./searchStage";
+import ScalarSlider from "./scalarSlider";
+import projectStage from "./projectStage";
 
 function SemanticBoosting({query,queryVector,schema}){
     const { pushToast } = useToast();
@@ -13,25 +15,45 @@ function SemanticBoosting({query,queryVector,schema}){
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        vector_results : {val:20,range:[5,50],step:5,comment:"How many vector results to fetch"},
+        vector_results : {val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
         k : {val:10,range:[1,25],step:1,comment:"Number of final results"},
         overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"},
-        vector_weight : {val:1,range:[1,5],step:1,comment:"Weight the vector score before boosting"}
+        vector_weight : {val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
+        vector_score_cutoff : {val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"}
     }
     const [config, setConfig] = useState(defaultConfig)
+    const [scalar, setScalar] = useState(1);
     const resetConfig = () => {
         setConfig(defaultConfig);
+        setScalar(1);
     }
 
     const handleSliderChange = (param, newValue) => {
-        setConfig({
-            ...config,
+        setConfig(prevConfig => ({
+            ...prevConfig,
             [param]: {
                 ...config[param],
                 val:parseFloat(newValue)
             }
-            });
+            }));
       };
+    
+
+    const handleScalarChange = (value) => {
+        value = parseFloat(value);
+        setScalar(value);
+        const vector_results = value*10;
+        const overrequest_factor = defaultConfig.overrequest_factor.val*vector_results;
+        const vector_weight = value;
+        const vector_score_cutoff = (1-value/10);
+        setConfig(prevConfig =>({
+            ...prevConfig,
+            vector_results: {...prevConfig.vector_results,val:vector_results},
+            overrequest_factor: {...prevConfig.overrequest_factor,val:overrequest_factor},
+            vector_weight: {...prevConfig.vector_weight,val:vector_weight},
+            vector_score_cutoff: {...prevConfig.vector_score_cutoff,val:vector_score_cutoff}
+        }));
+    };
 
     useEffect(() => {
         if(queryVector){
@@ -52,7 +74,11 @@ function SemanticBoosting({query,queryVector,schema}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Semantic Boosting Params"/>
-            <Results response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            <div>
+                <br/>
+                <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
+                <Results schema={schema} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            </div>
         </div>
     )
 }
@@ -67,7 +93,8 @@ async function search(query,queryVector,schema,config) {
                 path: `${schema.vectorField}`,
                 queryVector: queryVector,
                 numCandidates: config.k.val * config.overrequest_factor.val,
-                limit: config.k.val
+                limit: config.vector_results.val
+
             }
         },
         {
@@ -77,44 +104,44 @@ async function search(query,queryVector,schema,config) {
                 value:"$_id",
                 score: {$meta: "vectorSearchScore"}
             }
+        },
+        {
+            $match:{
+                score:{$gte:config.vector_score_cutoff.val}
+            }
         }
     ];
     let vector_boosts = [];
+    let boost_scores = {};
+    let boost_ids = [];
     try{
-        vector_boosts = await axios.post(`api/search`,{pipeline : vector_pipeline});
-        vector_boosts = vector_boosts.data.results.map(r => {
+        const vector_results = await axios.post(`api/search`,{pipeline : vector_pipeline});
+        vector_boosts = vector_results.data.results.map(r => {
             return {
                 field: r.field,
                 value: r.value,
                 score: r.score*config.vector_weight.val
             }
         });
-    }catch(error){
-        return new Promise((resolve,reject) => {error.response.data.error});
-    };
+        boost_scores = Object.fromEntries(vector_results.data.results.map(b => [b.value,b.score]));
+        boost_ids = vector_results.data.results.map(b => b.value);
 
-    const lexical_pipeline = [
-        searchStage(query,schema),
-        {
-            $project: {
-                score: {$meta: "searchScore"},
-                title:`$${schema.titleField}`,
-                image:`$${schema.imageField}`,
-                description:`$${schema.descriptionField}`,
-                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-            }            
-        },
-        {$limit: config.k.val}
-    ];
-    return new Promise((resolve,reject) => {
-        axios.post(`api/search`,
+        var project =  projectStage(schema);
+        project.$project.boost = {$in:[{$toString:"$_id"},boost_ids]};         
+        const lexical_pipeline = [
+            searchStage(query,schema),
+            project,
+            {$limit: config.k.val}
+        ];
+        var response = await axios.post(`api/search`,
             { 
                 pipeline : lexical_pipeline,
                 boosts:vector_boosts,
-            },
-        ).then(response => resolve(response))
-        .catch((error) => {
-            reject(error.response.data.error);
-        })
-    });
+            });
+        const modifiedResults = response.data.results.map(r => {r.vectorScore = boost_scores[r._id]; return r});
+        response.data.results = modifiedResults;
+        return response;
+    }catch(error){
+        throw error?.response?.data?.error || error;
+    };
 }

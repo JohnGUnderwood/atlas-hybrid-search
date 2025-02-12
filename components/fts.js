@@ -4,6 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
 import searchStage from "./searchStage";
+import projectStage from "./projectStage";
 
 function FTS({query,schema}){
     const { pushToast } = useToast();
@@ -27,7 +28,7 @@ function FTS({query,schema}){
     },[query]);
 
     return (
-        <Results response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
+        <Results schema={schema} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
     )
 }
 
@@ -39,15 +40,7 @@ async function search(query,schema) {
 
     const pipeline = [
         searchStage(query,schema),
-        {
-            $project: {
-                score: {$meta: "searchScore"},
-                title:`$${schema.titleField}`,
-                image:`$${schema.imageField}`,
-                description:`$${schema.descriptionField}`,
-                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-            }            
-        },
+        projectStage(schema),
         {$limit: k}
     ]
     return new Promise((resolve,reject) => {

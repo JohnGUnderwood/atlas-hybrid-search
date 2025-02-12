@@ -22,8 +22,8 @@ function searchStage(query, schema) {
                     }
                 }
             ]
-        }
-        
+        },
+        highlight:{path:`${schema.descriptionField}`}
     }};
 }
 
