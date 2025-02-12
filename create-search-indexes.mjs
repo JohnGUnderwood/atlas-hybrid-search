@@ -11,14 +11,25 @@ const searchIndex = {
       "fields": {
         "_id":{"type":"objectId"},
         [`${schema.descriptionField}`]: {
-          "type": "string"
+          "type": "string",
+            "analyzer":"lucene.english",
+            "multi": {
+              "standardAnalyzer": {
+                "type": "string",
+                "analyzer": "lucene.standard"
+              }
+            }
         },
         [`${schema.titleField}`]: [
           {
-            "type": "string"
-          },
-          {
-            "type": "autocomplete"
+            "type": "string",
+            "analyzer":"lucene.standard",
+            "multi": {
+              "keywordAnalyzer": {
+                "type": "string",
+                "analyzer": "keyword"
+              }
+            }
           }
         ]
       }
@@ -49,6 +60,10 @@ for(const searchField of schema.searchFields){
       "keywordAnalyzer": {
         "type": "string",
         "analyzer": "keyword"
+      },
+      "standardAnalyzer": {
+        "type": "string",
+        "analyzer": "lucene.standard"
       }
     }
   }

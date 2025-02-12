@@ -8,16 +8,23 @@ function searchStage(query, schema) {
                         path: [
                             `${schema.titleField}`,
                             `${schema.descriptionField}`,
-                            ...schema.searchFields,
-                            ...schema.searchFields.map(f => ({'value':`${f}`,'multi':'keywordAnalyzer'}))
+                            ...schema.searchFields
                         ]
                     }
                 },
                 {
                     text: {query: query, 
                         path: [
+                            `${schema.titleField}`,
                             ...schema.searchFields.map(f => ({'value':`${f}`,'multi':'keywordAnalyzer'}))
                         ],
+                        score: {boost: {value: 2}}
+                    }
+                },
+                {
+                    phrase: {query: query, 
+                        path: {'value':`${schema.descriptionField}`,'multi':'standardAnalyzer'},
+                        slop:0,
                         score: {boost: {value: 2}}
                     }
                 }
