@@ -6,6 +6,7 @@ import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import searchStage from "./searchStage";
 import ScalarSlider from "./scalarSlider";
+import projectStage from "./projectStage";
 
 function SemanticBoosting({query,queryVector,schema}){
     const { pushToast } = useToast();
@@ -14,7 +15,7 @@ function SemanticBoosting({query,queryVector,schema}){
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        vector_results : {val:20,range:[5,225],step:5,comment:"How many vector results to fetch"},
+        vector_results : {val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
         k : {val:10,range:[1,25],step:1,comment:"Number of final results"},
         overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"},
         vector_weight : {val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
@@ -41,7 +42,7 @@ function SemanticBoosting({query,queryVector,schema}){
     const handleScalarChange = (value) => {
         value = parseFloat(value);
         setScalar(value);
-        const vector_results = config.k.val*value;
+        const vector_results = value*10;
         const overrequest_factor = defaultConfig.overrequest_factor.val*vector_results;
         const vector_weight = value;
         const vector_score_cutoff = (1-value/10);
@@ -76,7 +77,7 @@ function SemanticBoosting({query,queryVector,schema}){
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
-                <Results response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                <Results schema={schema} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
             </div>
         </div>
     )
@@ -123,19 +124,12 @@ async function search(query,queryVector,schema,config) {
         });
         boost_scores = Object.fromEntries(vector_results.data.results.map(b => [b.value,b.score]));
         boost_ids = vector_results.data.results.map(b => b.value);
+
+        var project =  projectStage(schema);
+        project.$project.boost = {$in:[{$toString:"$_id"},boost_ids]};         
         const lexical_pipeline = [
             searchStage(query,schema),
-            {
-                $project: {
-                    score: {$meta: "searchScore"},
-                    title:`$${schema.titleField}`,
-                    image:`$${schema.imageField}`,
-                    description:`$${schema.descriptionField}`,
-                    ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {}),
-                    highlights: { $meta: "searchHighlights" },
-                    boost: {$in:[{$toString:"$_id"},boost_ids]}
-                }            
-            },
+            project,
             {$limit: config.k.val}
         ];
         var response = await axios.post(`api/search`,
