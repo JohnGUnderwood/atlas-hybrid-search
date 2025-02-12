@@ -94,6 +94,7 @@ async function search(query,queryVector,schema,config) {
                 queryVector: queryVector,
                 numCandidates: config.k.val * config.overrequest_factor.val,
                 limit: config.vector_results.val
+
             }
         },
         {
