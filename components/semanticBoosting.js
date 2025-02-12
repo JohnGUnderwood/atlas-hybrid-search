@@ -24,6 +24,7 @@ function SemanticBoosting({query,queryVector,schema}){
     const [scalar, setScalar] = useState(1);
     const resetConfig = () => {
         setConfig(defaultConfig);
+        setScalar(1);
     }
 
     const handleSliderChange = (param, newValue) => {

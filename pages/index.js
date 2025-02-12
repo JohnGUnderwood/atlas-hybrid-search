@@ -28,6 +28,12 @@ const Home = () => {
   const [sample, setSample] = useState(null);
   const [open, setOpen] = useState(false);
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      handleSearch();
+    }
+  }
+
   const handleSearch = () => {
     console.log("Search Clicked!")
     if(query && query != ""){
@@ -80,7 +86,7 @@ const Home = () => {
     <Header/>
     <AppBanner heading="Atlas Hybrid Search Tester"></AppBanner>
     <div style={{display:"grid",gridTemplateColumns:"90% 120px",gap:"10px",alignItems:"start"}}>
-      <div><SearchInput value={query} onChange={handleQueryChange} aria-label="some label" style={{marginBottom:"20px"}}></SearchInput></div>
+      <div><SearchInput value={query} onChange={handleQueryChange} onKeyDown={(e)=>handleKeyPress(e)} aria-label="some label" style={{marginBottom:"20px"}}></SearchInput></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSearch()} variant="primary">Vector Search</Button></div>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"120px 120px",gap:"10px",alignItems:"start"}}>
