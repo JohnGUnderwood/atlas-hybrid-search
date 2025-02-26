@@ -23,9 +23,9 @@ class Model {
             const model = process.env.VOYAGEMODEL || "voyage-3";
             const resp = await this.model.post(
                 "embeddings",
-                {model:model,input:string,output_dimension:this.dimensions}
+                {model:model,input:[string],output_dimension:this.dimensions}
             );
-            return resp.data.embeddings[0];
+            return resp.data.data[0].embedding;
         }catch(error){
             console.log(`Failed to create embeddings ${error}`)
             throw error;

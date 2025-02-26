@@ -89,12 +89,37 @@ const MDB_COLL = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_
 console.log("Database: ", MDB_DB);
 console.log("Collection: ", MDB_COLL);
 
+// Deep merge for nested objects
+function deepMerge(target, source) {
+  for (const key in source) {
+      if (Array.isArray(source[key]) && Array.isArray(target[key])) {
+          // Concatenate arrays
+          source[key] = [...target[key], ...source[key]];
+      } else if (source[key] instanceof Object && key in target) {
+          // Handle nested objects
+          Object.assign(source[key], deepMerge(target[key], source[key]));
+      }
+  }
+  return { ...target, ...source };
+}
+
 async function create(collection,index){
   try{
     await collection.createSearchIndex(index);
   }catch(error){
     if(error instanceof MongoError && error.codeName == 'IndexAlreadyExists'){
       console.log(`Index ${index.name} already exists`);
+      try{
+        console.log(`Updating search index`);
+        const existingIndex = await collection.listSearchIndexes(index.name).toArray();
+        console.log('Previous index',existingIndex[0].latestDefinition);
+        const newIndex = deepMerge(index.definition,existingIndex[0].latestDefinition);
+        console.log('New index',newIndex);
+        await collection.updateSearchIndex(index.name,newIndex);
+      }catch(error){
+        console.log(`Updating index ${index.name} failed ${error}`);
+        throw error;
+      }
     }
     else{
       console.log(`Creating index ${index.name} failed ${error}`);
