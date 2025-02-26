@@ -3,12 +3,12 @@ import { createRouter } from 'next-connect';
 
 class Model {
     constructor(apiKey){
-        this.name = 'nomic';
+        this.name = 'voyageai';
         this.apiKey = apiKey
         this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1024;
         try{
             this.model = axios.create({
-                baseURL: "https://api-atlas.nomic.ai/v1/",
+                baseURL: "https://api.voyageai.com/v1/",
                 timeout: 1000,
                 headers: {"Content-Type": "application/json","Authorization":`Bearer ${apiKey}`}
               });
@@ -20,11 +20,12 @@ class Model {
 
     embed = async function(string){
         try{
+            const model = process.env.VOYAGEMODEL || "voyage-3";
             const resp = await this.model.post(
-                "embedding/text",
-                {model:"nomic-embed-text-v1","texts":[string]}
+                "embeddings",
+                {model:model,input:[string],output_dimension:this.dimensions}
             );
-            return resp.data.embeddings[0];
+            return resp.data.data[0].embedding;
         }catch(error){
             console.log(`Failed to create embeddings ${error}`)
             throw error;
@@ -33,12 +34,12 @@ class Model {
 }
 
 async function middleware(req,res,next) {
-    const model = new Model(process.env.NOMICAPIKEY);
+    const model = new Model(process.env.VOYAGEAPIKEY);
     req.model = model;
     return next();
 }
   
-const nomic = createRouter();
-nomic.use(middleware);
+const voyageai = createRouter();
+voyageai.use(middleware);
   
-export default nomic;
+export default voyageai;

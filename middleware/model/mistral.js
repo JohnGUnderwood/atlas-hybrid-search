@@ -3,7 +3,9 @@ import { createRouter } from 'next-connect';
 
 class Model {
     constructor(apiKey){
+        this.name = 'mistral';
         this.apiKey = apiKey
+        this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):768;
         try{
             this.model = new MistralClient(apiKey);
         }catch(error){

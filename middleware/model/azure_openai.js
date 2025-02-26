@@ -4,7 +4,9 @@ import { createRouter } from 'next-connect';
 class Model {
     
     constructor(apiKey){
+        this.name = 'azure_openai';
         this.apiKey = apiKey
+        this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536;
         try{
             this.model = new OpenAIClient(
                 process.env.OPENAIENDPOINT,
