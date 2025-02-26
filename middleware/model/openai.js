@@ -3,7 +3,9 @@ import { createRouter } from 'next-connect';
 
 class Model {
     constructor(apiKey){
+        this.name = 'openai';
         this.apiKey = apiKey
+        this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536;
         try{
             this.model = new OpenAI({apiKey:apiKey});
         }catch(error){

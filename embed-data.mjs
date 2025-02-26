@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import schema from './config.mjs';
 
-dotenv.config();
+dotenv.config({override:true});
 
 console.log("Connection string: ", process.env.MDBCONNSTR);
 const MDB_DB = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";

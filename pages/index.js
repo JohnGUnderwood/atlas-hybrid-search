@@ -1,4 +1,7 @@
 import axios from 'axios';
+import dotenv from 'dotenv';
+dotenv.config({override:true});
+
 import Header from '../components/head';
 import RSF from '../components/rsf';
 import RRF from '../components/rrf';
@@ -14,7 +17,6 @@ import { ToastProvider, useToast } from '@leafygreen-ui/toast';
 import { Spinner } from "@leafygreen-ui/loading-indicator";
 import schema from '../config.mjs';
 import Modal from '@leafygreen-ui/modal';
-import { Subtitle } from '@leafygreen-ui/typography';
 import Code from '@leafygreen-ui/code';
 import ExpandableCard from '@leafygreen-ui/expandable-card';
 
@@ -38,15 +40,28 @@ const Home = () => {
     console.log("Search Clicked!")
     if(query && query != ""){
       setLoading(true);
-      embedQuery(query)
+      getQueryCache(query)
       .then(resp => {
-        console.log("Query Embedded!")
-        setQueryVector(resp);
-        setLoading(false);
+        if(resp){
+          console.log("Got cached query vector!");
+          setQueryVector(resp);
+          setLoading(false);
+        }else{
+          embedQuery(query)
+          .then(resp => {
+            console.log("Query Embedded!")
+            setQueryVector(resp);
+            setLoading(false);
+          })
+          .catch(error => {
+            console.log(error);
+            pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Failed to encode query using embedding model. ${error}`});
+          });
+        }
       })
       .catch(error => {
         console.log(error);
-        pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Failed to encode query using embedding model. ${error}`});
+        pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Failed to access query cache. ${error}`});
       });
     }
   }
@@ -79,7 +94,19 @@ const Home = () => {
     });
   }
 
-  const handleQueryChange = (event) => {setQuery(event.target.value);};
+  const handleQueryChange = (event) => {
+    setQuery(event.target.value);
+    getQueryCache(event.target.value)
+    .then(resp => {
+      if(resp){
+        console.log("Query Cached!",resp);
+        setQueryVector(resp);
+      }
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  };
 
   return (
     <>
@@ -181,6 +208,21 @@ async function getSample(){
   try{
     const response = await axios.get('api/sample');
     return response.data;
+  }catch (e) {
+    throw e;
+  }
+}
+
+async function getQueryCache(terms){
+  try{
+    const response = await axios.get(`api/embed/cache?terms=${terms}`);
+    if (response.status === 204) {
+      return null; // Cache miss
+    }else if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }else{
+      return response.data; // Cache hit
+    }
   }catch (e) {
     throw e;
   }

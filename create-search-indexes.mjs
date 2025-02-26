@@ -1,10 +1,10 @@
 import { MongoClient, MongoError } from 'mongodb';
 import dotenv from 'dotenv';
 import schema from './config.mjs';
-dotenv.config();
+dotenv.config({override:true});
 
 const searchIndex = {
-  name:"searchIndex",
+  name:process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex",
   definition: {
     "mappings": {
       "dynamic": false,
@@ -69,14 +69,14 @@ for(const searchField of schema.searchFields){
   }
 }
 const vectorIndex = {
-  name: "vectorIndex",
+  name: process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex",
   type: "vectorSearch",
   definition: {
     "fields": [
       {
         "type": "vector",
         "path": `${schema.vectorField}`,
-        "numDimensions": 1536,
+        "numDimensions": process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536,
         "similarity": "cosine"
       }
     ]
