@@ -19,11 +19,11 @@ class Model {
         }
     }
 
-    embed = async function(string){
+    embed = async function(string,type){
         try{
             const resp = await this.client.post(
                 "embeddings",
-                {model:this.model,input:[string],output_dimension:this.dimensions}
+                {model:this.model,input:[string],output_dimension:this.dimensions,input_type:type}
             );
             return resp.data.data[0].embedding;
         }catch(error){
