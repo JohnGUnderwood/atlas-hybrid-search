@@ -9,7 +9,7 @@ router.get(async (req, res) => {
     }else{
         try{
             const response = await req.db.collection('query_cache').findOne({
-                _id:`${req.query.terms}_${req.model.name}_${req.model.dimensions}`.toLowerCase()
+                _id:`${req.query.terms}_${req.model.name}_${req.model.model}_${req.model.dimensions}`.toLowerCase()
             });
             if(response){
                 res.status(200).json(response.embedding);

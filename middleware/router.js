@@ -10,19 +10,21 @@ const baseRouter = createRouter();
 baseRouter.currentModel = '';
 
 let modelMiddleware;
-if(process.env.OPENAIENDPOINT && process.env.OPENAIDEPLOYMENT && process.env.OPENAIAPIKEY){
+const embeddingProvider = process.env.EMBEDDING_PROVIDER || "azure_openai";
+
+if(embeddingProvider == "azure_openai"){
     modelMiddleware = azure_openai;
     console.log("Using Azure OpenAI embeddings");
-}else if(process.env.OPENAIAPIKEY){
+}else if(embeddingProvider == "openai"){
     modelMiddleware = openai;
     console.log("Using OpenAI embeddings");
-}else if(process.env.MISTRALAPIKEY){
+}else if(embeddingProvider == "mistral"){
     modelMiddleware = mistral;
     console.log("Using Mistral embeddings");
-}else if(process.env.NOMICAPIKEY){
+}else if(embeddingProvider == "nomic"){
     modelMiddleware = nomic;
     console.log("Using Nomic embeddings");
-}else if(process.env.VOYAGEAPIKEY){
+}else if(embeddingProvider == "voyageai"){
     modelMiddleware = voyageai;
     console.log("Using Voyage AI embeddings");
 }

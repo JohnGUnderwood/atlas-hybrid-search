@@ -15,15 +15,17 @@ router.get(async (req, res) => {
             const response = await req.model.embed(string);
             if(cacheQuery){
                 const name = req.model.name;
+                const model = req.model.model;
                 const dimensions = response.length;
                 const collection = req.db.collection('query_cache');
-                const _id = `${string}_${name}_${dimensions.toString()}`.toLowerCase();
+                const _id = `${string}_${name}_${model}_${dimensions.toString()}`.toLowerCase();
                 collection.updateOne(
                     {_id:_id},
                     {$setOnInsert: {
                         _id:_id,
                         embedding:response,
-                        model:name,
+                        provider:name,
+                        model:model,
                         dimensions:dimensions
                         }
                     },
