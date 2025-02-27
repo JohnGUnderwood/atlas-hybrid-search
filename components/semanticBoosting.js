@@ -92,7 +92,7 @@ async function search(query,queryVector,schema,config) {
                 index: '',
                 path: `${schema.vectorField}`,
                 queryVector: queryVector,
-                numCandidates: config.k.val * config.overrequest_factor.val,
+                numCandidates: Math.min(config.k.val * config.overrequest_factor.val,10000),
                 limit: config.vector_results.val
 
             }
