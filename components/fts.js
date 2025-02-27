@@ -28,7 +28,7 @@ function FTS({query,schema}){
     },[query]);
 
     return (
-        <Results schema={schema} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
+        <Results queryText={query} schema={schema} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
     )
 }
 

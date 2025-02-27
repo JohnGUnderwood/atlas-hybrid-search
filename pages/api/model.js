@@ -3,7 +3,6 @@ import { baseRouter } from "../../middleware/router";
 const router = baseRouter.clone();
 // Handle /api/model route
 router.get(async (req, res) => {
-    console.log(req);
     res.status(200).json({
         embedding:{
             provider:req.model?.provider,

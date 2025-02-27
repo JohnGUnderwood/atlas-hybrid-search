@@ -5,7 +5,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 
-function VS({queryVector,schema}){
+function VS({query,queryVector,schema}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ function VS({queryVector,schema}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Vector Search Params"/>
-            <Results response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            <Results queryText={query} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
     )
 }

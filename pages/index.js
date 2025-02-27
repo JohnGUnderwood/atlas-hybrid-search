@@ -144,7 +144,7 @@ const Home = () => {
         <FTS query={query} schema={schema}/>
       </Tab>
       <Tab name="Vector Search">
-        <VS queryVector={queryVector} schema={schema}/>
+        <VS query={query} queryVector={queryVector} schema={schema}/>
       </Tab>
       <Tab name="Relative Score Fusion">
         <RSF query={query} queryVector={queryVector} schema={schema}/>

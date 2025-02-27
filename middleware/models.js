@@ -1,4 +1,3 @@
-import schema from '../config.mjs';
 import OpenAI from 'openai';
 import MistralClient from '@mistralai/mistralai';
 import axios from 'axios';
@@ -168,7 +167,7 @@ class VoyageAIModel {
         documents.forEach((doc,index) => {
             docMap[index] = doc;
         });
-        const docStrings = documents.map((doc) => doc[`${schema.descriptionField}`]);
+        const docStrings = documents.map((doc) => doc.description);
         try{
             const resp = await this.client.post(
                 "rerank",
