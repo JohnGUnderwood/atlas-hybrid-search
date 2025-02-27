@@ -23,6 +23,7 @@ router.get(async (req, res) => {
                     {_id:_id},
                     {$setOnInsert: {
                         _id:_id,
+                        query:string,
                         embedding:response,
                         provider:name,
                         model:model,
