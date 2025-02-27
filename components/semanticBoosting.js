@@ -43,7 +43,7 @@ function SemanticBoosting({query,queryVector,schema}){
         value = parseFloat(value);
         setScalar(value);
         const vector_results = value*10;
-        const overrequest_factor = defaultConfig.overrequest_factor.val*vector_results;
+        const overrequest_factor = Math.min(defaultConfig.overrequest_factor.val*vector_results,10000/vector_results);
         const vector_weight = value;
         const vector_score_cutoff = (1-value/10);
         setConfig(prevConfig =>({
@@ -92,7 +92,7 @@ async function search(query,queryVector,schema,config) {
                 index: '',
                 path: `${schema.vectorField}`,
                 queryVector: queryVector,
-                numCandidates: Math.min(config.k.val * config.overrequest_factor.val,10000),
+                numCandidates: config.k.val * config.overrequest_factor.val,
                 limit: config.vector_results.val
 
             }
