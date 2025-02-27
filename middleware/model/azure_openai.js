@@ -5,12 +5,13 @@ class Model {
     
     constructor(apiKey){
         this.name = 'azure_openai';
+        this.model = process.env.OPENAIDEPLOYMENT
         this.apiKey = apiKey
         this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536;
         try{
-            this.model = new OpenAIClient(
+            this.client = new OpenAIClient(
                 process.env.OPENAIENDPOINT,
-                new AzureKeyCredential(process.env.OPENAIAPIKEY)
+                new AzureKeyCredential(apiKey)
             );
         }catch(error){
             console.log(`Connection failed ${error}`)
@@ -20,8 +21,8 @@ class Model {
 
     embed = async function(string){
         try{
-            const resp = await this.model.getEmbeddings(
-                process.env.OPENAIDEPLOYMENT,
+            const resp = await this.client.getEmbeddings(
+                this.model,
                 string
               )
             return resp.data[0].embedding;
@@ -33,7 +34,7 @@ class Model {
 }
 
 async function middleware(req, res, next) {
-    const model = new Model(process.env.OPENAIAPIKEY);
+    const model = new Model(process.env.APIKEY || process.env.OPENAIAPIKEY); // Use APIKEY if set, otherwise use OPENAIAPIKEY
     req.model = model;
     return next();
 }

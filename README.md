@@ -13,9 +13,9 @@ For the hybrid search algorithms you can modify the behaviour by changing the pa
 For both RSF and RRF algorithms the weighted and/or normalized text and vector scores are calculated and then summed to give the final score. The results show what proportion of each went into the final score for each document.
 
 ## Embeddings
-In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. Byt default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
+In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. By default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
 
-At the moment the app is set so you can switch between [OpenAI](https://platform.openai.com/docs/guides/embeddings), [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/understand-embeddings), [Nomic](https://docs.nomic.ai/reference/endpoints/nomic-embed-text) and [Mistral](https://docs.mistral.ai/capabilities/embeddings/). To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file.
+At the moment the app is set so you can switch between [OpenAI](https://platform.openai.com/docs/guides/embeddings), [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/understand-embeddings), [Nomic](https://docs.nomic.ai/reference/endpoints/nomic-embed-text), [Mistral](https://docs.mistral.ai/capabilities/embeddings/) and [Voyage AI](https://docs.voyageai.com/reference/embeddings-api). To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file. 
 
 
 If you are confident with code you could add another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/model).

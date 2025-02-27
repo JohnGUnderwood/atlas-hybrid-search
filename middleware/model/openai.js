@@ -4,10 +4,11 @@ import { createRouter } from 'next-connect';
 class Model {
     constructor(apiKey){
         this.name = 'openai';
+        this.model = process.env.EMBEDDING_MODEL || "text-embedding-ada-002";
         this.apiKey = apiKey
         this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536;
         try{
-            this.model = new OpenAI({apiKey:apiKey});
+            this.client = new OpenAI({apiKey:apiKey});
         }catch(error){
             console.log(`Connection failed ${error}`)
             throw error;
@@ -16,9 +17,8 @@ class Model {
 
     embed = async function(string){
         try{
-            const model = process.env.OPENAIEMBEDDINGMODEL || "text-embedding-ada-002";
-            const resp = await this.model.embeddings.create({
-                model:model,
+            const resp = await this.client.embeddings.create({
+                model:this.model,
                 input:string,
                 encoding_format:"float"
               })
@@ -32,7 +32,7 @@ class Model {
 
 async function middleware(req, res, next) {
     // req.model = await get();
-    const model = new Model(process.env.OPENAIAPIKEY);
+    const model = new Model(process.env.APIKEY);
     req.model = model;
     return next();
 }
