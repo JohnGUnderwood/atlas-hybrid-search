@@ -1,5 +1,4 @@
-import { createRouter } from 'next-connect';
-import database from '../../middleware/database';
+import { baseRouter } from "../../middleware/router";
 import { ObjectId } from 'mongodb';
 
 const searchCollection = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
@@ -40,20 +39,12 @@ async function getResults(collection,pipeline){
     }
 }
 
-const router = createRouter();
-
-router.use(database);
-
+const router = baseRouter.clone();
 router.post(async (req, res) => {
     if(!req.body.pipeline){
         console.log(`Request missing 'pipeline' data`)
         res.status(400).send(`Request missing 'pipeline' data`);
     }else{
-        let rerank = false;
-        if(req.query.rerank){
-            rerank = (`${req.query.rerank}`.toLowerCase() == 'true');
-        }
-
         var pipeline = req.body.pipeline
         if(req.body.boosts && req.body.pipeline[0].$search){
             req.body.boosts.forEach((boost) => {
@@ -71,11 +62,6 @@ router.post(async (req, res) => {
         }
         try{
             const response = await getResults(req.collection,pipeline);
-            if(rerank && (!req.query.terms || req.query.terms == '')){
-                res.status(400).send(`Request missing 'query' paramater for reranking`);
-            }else if(rerank){
-                req.model.rerank(req.query.terms,response.results);
-            }
             res.status(200).json(response);
         }catch(error){
             res.status(405).json({'error':`${error}`,query:pipeline});
