@@ -44,6 +44,7 @@ const Home = () => {
       .then(resp => {
         if(resp){
           console.log("Got cached query vector!");
+          pushToast({timeout:10000,variant:"note",title:"Cache Hit",description:`Used cached embedding for ${query}`});
           setQueryVector(resp);
           setLoading(false);
         }else{
@@ -99,7 +100,8 @@ const Home = () => {
     getQueryCache(event.target.value)
     .then(resp => {
       if(resp){
-        console.log("Query Cached!",resp);
+        console.log("Got cached query vector!");
+        pushToast({timeout:10000,variant:"note",title:"Cache Hit",description:`Used cached embedding for ${event.target.value}`});
         setQueryVector(resp);
       }
     })
@@ -213,19 +215,20 @@ async function getSample(){
   }
 }
 
-async function getQueryCache(terms){
-  try{
-    const response = await axios.get(`api/embed/cache?terms=${terms}`);
-    if (response.status === 204) {
-      return null; // Cache miss
-    }else if (response.status !== 200) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }else{
-      return response.data; // Cache hit
-    }
-  }catch (e) {
-    throw e;
-  }
+function getQueryCache(terms){
+  return axios.get(`api/embed/cache?terms=${terms}`)
+    .then(response => {
+      if (response.status === 204) {
+        return null; // Cache miss
+      }else if (response.status !== 200) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }else{
+        return response.data; // Cache hit
+      }
+    })
+    .catch(error => {
+      throw error;
+    });
 }
 
 export default function App(){
