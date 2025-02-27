@@ -23,6 +23,7 @@ function SemanticBoosting({query,queryVector,schema}){
     }
     const [config, setConfig] = useState(defaultConfig)
     const [scalar, setScalar] = useState(1);
+    const [numCandidates, setNumCandidates] = useState(Math.min(defaultConfig.k.val * defaultConfig.overrequest_factor.val,10000));
     const resetConfig = () => {
         setConfig(defaultConfig);
         setScalar(1);
@@ -43,7 +44,7 @@ function SemanticBoosting({query,queryVector,schema}){
         value = parseFloat(value);
         setScalar(value);
         const vector_results = value*10;
-        const overrequest_factor = Math.min(defaultConfig.overrequest_factor.val*vector_results,10000/vector_results);
+        const overrequest_factor = defaultConfig.overrequest_factor.val*vector_results;
         const vector_weight = value;
         const vector_score_cutoff = (1-value/10);
         setConfig(prevConfig =>({
@@ -58,7 +59,7 @@ function SemanticBoosting({query,queryVector,schema}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config)
+            search(query,queryVector,schema,config,numCandidates)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -68,6 +69,7 @@ function SemanticBoosting({query,queryVector,schema}){
               console.log(error);
             });
         }
+        setNumCandidates(Math.min(config.k.val * config.overrequest_factor.val,10000));
     
     },[queryVector,config]);
 
@@ -77,7 +79,7 @@ function SemanticBoosting({query,queryVector,schema}){
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
-                <Results schema={schema} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                <Results schema={schema} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
             </div>
         </div>
     )
@@ -85,14 +87,14 @@ function SemanticBoosting({query,queryVector,schema}){
 
 export default SemanticBoosting;
 
-async function search(query,queryVector,schema,config) {
+async function search(query,queryVector,schema,config,numCandidates) {
     const vector_pipeline = [
         {
             $vectorSearch: {
                 index: '',
                 path: `${schema.vectorField}`,
                 queryVector: queryVector,
-                numCandidates: config.k.val * config.overrequest_factor.val,
+                numCandidates: numCandidates,
                 limit: config.vector_results.val
 
             }
