@@ -15,7 +15,7 @@ class Model {
         }
     }
 
-    embed = async function(string){
+    embed = async function(string,type){
         try{
             const resp = await this.client.embeddings({
                 model:this.model,

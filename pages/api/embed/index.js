@@ -7,12 +7,22 @@ router.get(async (req, res) => {
         res.status(400).send(`Request missing 'terms' parameter`);
     }else{
         const string = req.query.terms
+
+        let embeddingType = 'query'; // default embedding type is 'query'
+        if(req.query.type){
+            embeddingType = `${req.query.type}`.toLowerCase();
+        }
+        if(embeddingType != 'query' && embeddingType != 'document'){
+            console.log(`Request parameter 'type' must be 'query' or 'document'`)
+            res.status(400).send(`Request parameter 'type' must be 'query' or 'document'`);
+        }
+
         let cacheQuery = true;
         if(req.query.cache){
             cacheQuery = (`${req.query.cache}`.toLowerCase() == 'true');
         }
         try{
-            const response = await req.model.embed(string);
+            const response = await req.model.embed(string,embeddingType);
             if(cacheQuery){
                 const name = req.model.name;
                 const model = req.model.model;
@@ -35,6 +45,7 @@ router.get(async (req, res) => {
             }  
             res.status(200).json(response);
         }catch(error){
+            console.log(error);
             res.status(405).json(error);
         }
     }

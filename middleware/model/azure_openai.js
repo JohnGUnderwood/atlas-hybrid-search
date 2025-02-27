@@ -19,12 +19,12 @@ class Model {
         }
     }
 
-    embed = async function(string){
+    embed = async function(string,type){
         try{
             const resp = await this.client.getEmbeddings(
                 this.model,
                 string
-              )
+            )
             return resp.data[0].embedding;
         }catch(error){
             console.log(`Failed to create embeddings ${error}`)

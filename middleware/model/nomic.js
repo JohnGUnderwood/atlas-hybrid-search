@@ -6,7 +6,7 @@ class Model {
         this.name = 'nomic';
         this.model = process.env.EMBEDDING_MODEL || "nomic-embed-text-v1";
         this.apiKey = apiKey;
-        this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1024;
+        this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):768;
         try{
             this.client = axios.create({
                 baseURL: "https://api-atlas.nomic.ai/v1/",
@@ -19,11 +19,16 @@ class Model {
         }
     }
 
-    embed = async function(string){
+    embed = async function(string,type){
+        if(type == "query"){
+            type = "search_query"
+        }else if(type == "document"){
+            type = "search_document"
+        }
         try{
             const resp = await this.client.post(
                 "embedding/text",
-                {model:this.model,"texts":[string]}
+                {model:this.model,"texts":[string],task_type:type}
             );
             return resp.data.embeddings[0];
         }catch(error){
