@@ -1,5 +1,5 @@
 import { createRouter } from 'next-connect';
-import model from './models';
+import model from './model';
 import database from './database';
 
 const baseRouter = createRouter();

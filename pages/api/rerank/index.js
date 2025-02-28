@@ -8,7 +8,7 @@ router.post(async (req, res) => {
         res.status(400).send(`Request body must have 'query' and 'documents'`);
     }else{
         try{
-            const newResults = req.rerank_model.rerank(req.body.query,req.body.documents);
+            const newResults = await req.rerank_model.rerank(req.body.query,req.body.documents);
             res.status(200).json(newResults);
         }catch(error){
             console.log(error);
