@@ -9,14 +9,55 @@ import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
 import Banner from '@leafygreen-ui/banner'
 import createHighlighting from "./highlighting";
+import Checkbox from '@leafygreen-ui/checkbox';
+import { useEffect } from "react";
+import { useToast } from '@leafygreen-ui/toast';
+import { useModel } from '../context/ModelContext';
+import axios from "axios";
 
 const Bulb = () => <svg style={{width:"16px",flexShrink:0}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16" role="img" aria-label="Bulb Icon"><path fill="currentColor" d="M12.331 8.5a5 5 0 1 0-8.612.086L5.408 11.5a1 1 0 0 0 .866.499H6.5V6a1.5 1.5 0 1 1 3 0v6h.224a1 1 0 0 0 .863-.496L12.34 8.5h-.009Z"></path><path fill="currentColor" d="M7.5 6v6h1V6a.5.5 0 0 0-1 0ZM10 14v-1H6v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1Z"></path></svg>;
 
-function Results({response,msg,hybrid,noResultsMsg,schema}){
+function Results({queryText,response,msg,hybrid,noResultsMsg,schema}){
     const [open, setOpen] = useState(false);
-    const results = response? response.results.length > 0? response.results : null : null;
     const query = response? response.query : null;
     const time = response? response.time : null;
+    const model = useModel();
+    const [rerank, setRerank] = useState(false);
+    const [results, setResults] = useState(response? response.results.length > 0? response.results : null : null);
+    const [rerankedResults, setRerankedResults] = useState(null);
+    const { pushToast } = useToast();
+
+    useEffect(() => {
+        // Want to 'cached' reranked results so not always hitting API unless response has changed.
+        if(rerank && rerankedResults){
+            setResults(rerankedResults);
+        }
+        else if(rerank && response.results.length >0 && queryText && queryText != "")
+        {
+            axios.post('api/rerank', {documents:response.results,query:queryText})
+                .then(resp => {
+                    setResults(resp.data);
+                    setRerankedResults(resp.data);
+                })
+                .catch(error => {
+                    console.log(error);
+                    pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Reranking failed. ${error}`});
+                });
+        }
+        else if(!rerank && response?.results.length > 0)    
+        {
+            setResults(response.results);
+        }
+    },[rerank]);
+
+    useEffect(() => {
+        if(response && response.results.length > 0)
+        {
+            setResults(response.results);
+            setRerankedResults(null);
+            setRerank(false);
+        }
+    },[response]);
 
     return (
         <div>
@@ -24,7 +65,8 @@ function Results({response,msg,hybrid,noResultsMsg,schema}){
         results ?
             <div style={{paddingLeft:"40px",paddingRight:"40px"}}>
                 <div style={{paddingTop:"25px"}}>
-                    <div style={{display:"grid",gridTemplateColumns:"50% 50%",gap:"5px",alignItems:"start"}}>
+                    <div style={{display:"grid",gridTemplateColumns:"20% 50% 30%",gap:"5px",alignItems:"start"}}>
+                        {model?.reranking?.provider? <div style={{padding:"4px 16px"}}><Checkbox checked={rerank} bold={true} label={"Use Reranker"} onChange={event => setRerank(!rerank)}/></div> : <></>}
                         <div style={{padding:"4px 16px"}}><span style={{borderRadius:"5px",backgroundColor:palette.blue.light3, padding:"2px 4px", float:"left"}}><em>{msg? `${msg}, query took ${time}ms`:`query took ${time}ms`}</em></span></div>
                         <div style={{padding:"4px 16px"}}><Button style={{float:"right"}} onClick={()=>setOpen(true)} variant="default">Show Query</Button></div>
                     </div>
@@ -49,7 +91,7 @@ function Results({response,msg,hybrid,noResultsMsg,schema}){
                                                     r.description
                                                 }
                                             </Description>
-                                            {Object.keys(r).filter(k => !["_id","score","title","image","description","boost","highlights"].includes(k)).map(k => (
+                                            {Object.keys(r).filter(k => !["_id","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked"].includes(k)).map(k => (
                                                 Array.isArray(r[k])
                                                 ? (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k].join(", ")}</span></p>)
                                                 : (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k]}</span></p>)
@@ -60,6 +102,7 @@ function Results({response,msg,hybrid,noResultsMsg,schema}){
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                             {r.boost? <Banner style={{margin:"10px"}} variant="warning" image={<Bulb/>}>Semantically Boosted Result</Banner> : <></>}
+                                            {r.reranked? <Banner style={{margin:"10px"}} variant="info">Reranked {`${r.reranked}`.toUpperCase()} (score: {r.rerank_score})</Banner> : <></>}
                                         </div>
                                     </div>
                                 </Card>

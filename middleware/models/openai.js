@@ -1,9 +1,8 @@
 import OpenAI from 'openai';
-import { createRouter } from 'next-connect';
 
-class Model {
+class OpenAIModel {
     constructor(apiKey){
-        this.name = 'openai';
+        this.provider = 'openai';
         this.model = process.env.EMBEDDING_MODEL || "text-embedding-ada-002";
         this.apiKey = apiKey
         this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536;
@@ -30,14 +29,4 @@ class Model {
     }
 }
 
-async function middleware(req, res, next) {
-    // req.model = await get();
-    const model = new Model(process.env.APIKEY);
-    req.model = model;
-    return next();
-}
-  
-const openai = createRouter();
-openai.use(middleware);
-  
-export default openai;
+export { OpenAIModel }

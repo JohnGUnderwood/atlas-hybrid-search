@@ -1,12 +1,11 @@
 import { baseRouter } from "../../../middleware/router";
 
 const router = baseRouter.clone();
-// Handle /api/embed/model route
+// Handle /api/rerank/model route
 router.get(async (req, res) => {
     res.status(200).json({
-        provider: req.model.provider,
-        model:req.model.model,
-        dimensions: req.model.dimensions,
+        provider: req.rerank_model?.provider,
+        model: req.rerank_model?.rerank_model,
     });
 });
 

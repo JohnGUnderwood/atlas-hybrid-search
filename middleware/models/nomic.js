@@ -1,9 +1,7 @@
 import axios from 'axios';
-import { createRouter } from 'next-connect';
-
-class Model {
+class NomicModel {
     constructor(apiKey){
-        this.name = 'nomic';
+        this.provider = 'nomic';
         this.model = process.env.EMBEDDING_MODEL || "nomic-embed-text-v1";
         this.apiKey = apiKey;
         this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):768;
@@ -38,13 +36,4 @@ class Model {
     }
 }
 
-async function middleware(req,res,next) {
-    const model = new Model(process.env.APIKEY);
-    req.model = model;
-    return next();
-}
-  
-const nomic = createRouter();
-nomic.use(middleware);
-  
-export default nomic;
+export { NomicModel }

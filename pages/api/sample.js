@@ -1,10 +1,6 @@
-import { createRouter } from 'next-connect';
-import database from '../../middleware/database';
+import { baseRouter } from "../../middleware/router";
 
-const router = createRouter();
-
-router.use(database);
-
+const router = baseRouter.clone();
 router.get(async (req, res) => {
     try{
         const response = await req.collection.aggregate([{ $sample: { size: 1 } }]).toArray();

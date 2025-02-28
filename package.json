@@ -23,6 +23,7 @@
     "@leafygreen-ui/tabs": "^11.1.13",
     "@leafygreen-ui/toast": "^6.1.18",
     "@leafygreen-ui/typography": "^18.0.1",
+    "@leafygreen-ui/checkbox": "^13.0.0",
     "@mistralai/mistralai": "^0.0.10",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",

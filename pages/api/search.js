@@ -1,5 +1,4 @@
-import { createRouter } from 'next-connect';
-import database from '../../middleware/database';
+import { baseRouter } from "../../middleware/router";
 import { ObjectId } from 'mongodb';
 
 const searchCollection = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
@@ -40,10 +39,7 @@ async function getResults(collection,pipeline){
     }
 }
 
-const router = createRouter();
-
-router.use(database);
-
+const router = baseRouter.clone();
 router.post(async (req, res) => {
     if(!req.body.pipeline){
         console.log(`Request missing 'pipeline' data`)

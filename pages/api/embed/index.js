@@ -1,4 +1,4 @@
-import { baseRouter } from '../../../middleware/router';
+import { baseRouter } from "../../../middleware/router";
 
 const router = baseRouter.clone();
 router.get(async (req, res) => {
@@ -24,18 +24,18 @@ router.get(async (req, res) => {
         try{
             const response = await req.model.embed(string,embeddingType);
             if(cacheQuery){
-                const name = req.model.name;
+                const provider = req.model.provider;
                 const model = req.model.model;
                 const dimensions = response.length;
                 const collection = req.db.collection('query_cache');
-                const _id = `${string}_${name}_${model}_${dimensions.toString()}`.toLowerCase();
+                const _id = `${string}_${provider}_${model}_${dimensions.toString()}`.toLowerCase();
                 collection.updateOne(
                     {_id:_id},
                     {$setOnInsert: {
                         _id:_id,
                         query:string,
                         embedding:response,
-                        provider:name,
+                        provider:provider,
                         model:model,
                         dimensions:dimensions
                         }

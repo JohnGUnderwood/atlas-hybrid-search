@@ -19,6 +19,7 @@ import schema from '../config.mjs';
 import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
 import ExpandableCard from '@leafygreen-ui/expandable-card';
+import { ModelProvider } from '../context/ModelContext';
 
 const Home = () => {
   const { pushToast } = useToast();
@@ -144,7 +145,7 @@ const Home = () => {
         <FTS query={query} schema={schema}/>
       </Tab>
       <Tab name="Vector Search">
-        <VS queryVector={queryVector} schema={schema}/>
+        <VS query={query} queryVector={queryVector} schema={schema}/>
       </Tab>
       <Tab name="Relative Score Fusion">
         <RSF query={query} queryVector={queryVector} schema={schema}/>
@@ -233,8 +234,10 @@ function getQueryCache(terms){
 
 export default function App(){
   return (
-    <ToastProvider>
-      <Home/>
-    </ToastProvider>
+    <ModelProvider>
+      <ToastProvider>
+        <Home/>
+      </ToastProvider>
+    </ModelProvider>
   )
 }
