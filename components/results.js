@@ -91,7 +91,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,schema}){
                                                     r.description
                                                 }
                                             </Description>
-                                            {Object.keys(r).filter(k => !["_id","score","title","image","description","boost","highlights"].includes(k)).map(k => (
+                                            {Object.keys(r).filter(k => !["_id","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked"].includes(k)).map(k => (
                                                 Array.isArray(r[k])
                                                 ? (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k].join(", ")}</span></p>)
                                                 : (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k]}</span></p>)
@@ -102,6 +102,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,schema}){
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                             {r.boost? <Banner style={{margin:"10px"}} variant="warning" image={<Bulb/>}>Semantically Boosted Result</Banner> : <></>}
+                                            {r.reranked? <Banner style={{margin:"10px"}} variant="info">Reranked {`${r.reranked}`.toUpperCase()} (score: {r.rerank_score})</Banner> : <></>}
                                         </div>
                                     </div>
                                 </Card>

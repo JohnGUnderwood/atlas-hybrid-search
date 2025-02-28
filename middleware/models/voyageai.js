@@ -42,7 +42,16 @@ class VoyageAIModel {
                 "rerank",
                 {model:this.rerank_model,query:query,documents:docStrings}
             );
-            const reranked = resp.data.data.map(r => { var doc = docMap[`${r.index}`]; doc.rerank_score = r.relevance_score; return doc; });
+            const reranked = resp.data.data.map((r,idx) => {
+                var doc = docMap[`${r.index}`];
+                if(idx < parseInt(r.index)){
+                    doc.reranked = "up"
+                }else if(idx > parseInt(r.index)){
+                    doc.reranked = "down"
+                }
+                doc.rerank_score = r.relevance_score;
+                return doc;
+            });
             return reranked;
         }catch(error){
             console.log(`Failed to rerank documents ${error}`)
