@@ -37,18 +37,43 @@ try{
         try{
             const db = client.db(MDB_DB);
             const collection = db.collection(MDB_COLL);
+
+            var project = {};
+            // check if schema.vectorSourceField is an array
+            if(schema.vectorSourceField && Array.isArray(schema.vectorSourceField)){
+                for (const field of schema.vectorSourceField){
+                    project[field] = 1;
+                }
+            }else{
+                project[schema.vectorSourceField] = 1;
+            }
             const cursor = collection
                 .find(
-                    {$and:[
-                        {$or:[{[schema.vectorField]:{$exists:false}},{[schema.vectorField]:null}]},
-                        {[schema.vectorSourceField]:{$exists:true}}
-                    ]}
-                ).project({[schema.vectorSourceField]:1});
+                    {$or:[{[schema.vectorField]:{$exists:false}},{[schema.vectorField]:null}]}
+                ).project(project);
             
             var embedded_count = 0;
             for await (const doc of cursor){
                 try{
-                    const embedding = await embed(doc[schema.vectorSourceField])
+                    let stringToEmbed = "";
+                    if(schema.vectorSourceField){
+                        if(Array.isArray(schema.vectorSourceField)){
+                            for (const field of schema.vectorSourceField){
+                                if(doc[`${field}`]){
+                                    if(Array.isArray(doc[field])){
+                                        stringToEmbed += `${field}: ${doc[field].join(", ")}\n`;
+                                    }else{
+                                        stringToEmbed += `${field}: `+`${doc[field]}`.toString()+`\n`;
+                                    }
+                                }
+                            }
+                        }else{
+                            if(doc[schema.vectorSourceField]){
+                                stringToEmbed = doc[schema.vectorSourceField];
+                            }
+                        }
+                    }
+                    const embedding = await embed(stringToEmbed);
                     await collection.updateOne({_id:doc._id},{$set:{[schema.vectorField]:embedding}});
                     console.log(`Embedded document: ${doc._id}`);
                     embedded_count += 1;

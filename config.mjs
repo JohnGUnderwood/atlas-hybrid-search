@@ -1,15 +1,17 @@
 // schema variables
 const schema = {
-    // display fields in results
-    descriptionField : "plot", 
+    // Display fields in results
+    descriptionField : "fullplot", // this field is used for reranking if turned on.
     titleField : "title",
     imageField : "poster",
-    // an additional fields for searching over
+    // An additional fields for searching over
     searchFields: ["cast","genres"],
-    // vector search field
-    vectorField : "plot_embedding",
-    // source for embedding when using embed-data.mjs
-    vectorSourceField: "plot"
+    // Vector search field
+    vectorField : "doc_embedding",
+    // Source for embedding when using embed-data.mjs. 
+    // If more than one value they are concatenated before embedding using: <fieldname>: <fieldvalue>\n
+    // vectorSourceField: "fullplot"
+    vectorSourceField: ["title","fullplot","cast","genres"],
 }
 
 // const schema = {
