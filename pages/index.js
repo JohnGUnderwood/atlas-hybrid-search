@@ -126,7 +126,7 @@ const Home = () => {
     {loading?<Spinner description="Loading..."/>:<></>}
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
       <Tab name="About">
-        <div style={{margin:"100px"}}>
+        <div style={{margin:"100px",marginTop:"50px"}}>
           <h1>About this application</h1>
           <p>This app helps you to test different strategies for combining lexical and vector search over a movie dataset. You can find source code here: <a href="https://github.com/JohnGUnderwood/atlas-hybrid-search">https://github.com/JohnGUnderwood/atlas-hybrid-search</a></p>
           <h2>Hybrid strategies</h2>
@@ -137,6 +137,9 @@ const Home = () => {
           <p>RRF combines lexical and vectors search using a weighted sum of their reciprocal rank. The reciprocal ranks of a result is 1/rank in the result list.</p>
           <h3>Semantic Boosting</h3>
           <p>In this strategy we use vector search to retrieve a given number of results. We then perform lexical search but boosting the unique ids of the documents returned by the vector search. This done by matching on the _id field and using the vector score as the boost value. The vector score is additive to the overall text score of the document and can be weighted by the user.</p>
+          <h2>Reranking</h2>
+          <h3>Rerank Results</h3>
+          <p>When the application is run with a reranking model you can select to rerank the returned results from any of the retrieval strategies. This will send the result documents and query to the configued reranking model, which returns a new resorted result set.</p>
           <h2>How to use</h2>
           <p>Use the Fulltext and Vector search tabs to test your query using just one or other approaches. Then use the other tabs to see how your query performs with different strategies. Have fun!</p>
         </div>
