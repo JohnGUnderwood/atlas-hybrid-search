@@ -14,7 +14,7 @@ import Button from '@leafygreen-ui/button';
 import { Tabs, Tab } from '@leafygreen-ui/tabs';
 import AppBanner from '../components/banner';
 import { ToastProvider, useToast } from '@leafygreen-ui/toast';
-import { Spinner } from "@leafygreen-ui/loading-indicator";
+import LoadingIndicator from '../components/LoadingIndicator';
 import schema from '../config.mjs';
 import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
@@ -123,7 +123,7 @@ const Home = () => {
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleShowIndexes()}>Show Indexes</Button></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSampleDoc()}>Sample Doc</Button></div>
     </div>
-    {loading?<Spinner description="Loading..."/>:<></>}
+    {loading?<LoadingIndicator/>:<></>}
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
       <Tab name="About">
         <div style={{margin:"100px"}}>
