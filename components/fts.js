@@ -46,7 +46,7 @@ async function search(query,schema) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-            pipeline : pipeline
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {
