@@ -1,6 +1,6 @@
 import { MongoClient, MongoError } from 'mongodb';
 import dotenv from 'dotenv';
-import schema from './config.mjs';
+import config from './config.mjs';
 dotenv.config({override:true});
 
 const searchIndex = {
@@ -88,6 +88,8 @@ const MDB_DB = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";
 const MDB_COLL = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada"
 console.log("Database: ", MDB_DB);
 console.log("Collection: ", MDB_COLL);
+const schema = config[`${process.env.SCHEMA_NAME || "default"}`];
+console.log("Schema: ", schema);
 
 // Deep merge for nested objects
 function deepMerge(target, source) {

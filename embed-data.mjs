@@ -1,8 +1,7 @@
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import schema from './config.mjs';
-
+import config from './config.mjs';
 dotenv.config({override:true});
 
 console.log("Connection string: ", process.env.MDBCONNSTR);
@@ -10,6 +9,9 @@ const MDB_DB = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";
 const MDB_COLL = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada"
 console.log("Database: ", MDB_DB);
 console.log("Collection: ", MDB_COLL);
+
+const schema = config[`${process.env.SCHEMA_NAME || "default"}`];
+console.log("Schema: ", schema);
 
 //use the serverless function that has been started under nodeJS.
 async function embed(input){
