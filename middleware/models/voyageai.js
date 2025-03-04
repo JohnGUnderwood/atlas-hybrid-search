@@ -36,7 +36,15 @@ class VoyageAIModel {
         documents.forEach((doc,index) => {
             docMap[index] = doc;
         });
-        const docStrings = documents.map((doc) => doc.description);
+        const docStrings = documents.map((doc) => {
+            if(doc.description){
+                return doc.description;
+            }else if(doc.title){
+                return doc.title;
+            }else{
+                return "";
+            }
+        });
         try{
             const resp = await this.client.post(
                 "rerank",
