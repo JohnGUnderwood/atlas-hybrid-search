@@ -23,7 +23,7 @@ function searchStage(query, schema) {
                 },
                 {
                     phrase: {query: query, 
-                        path: {'value':`${schema.titleField}`,'multi':'standardAnalyzer'},
+                        path: `${schema.titleField}`,
                         slop:0,
                         score: {boost: {value: 2}}
                     }
