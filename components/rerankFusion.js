@@ -53,7 +53,7 @@ function RerankFusion({query,queryVector,schema}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Rerank Fusion Params"/>
-          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.request_text_results.val} Vector Search: ${config.request_vector_results.val}`} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.request_text_results.val} Vector Search: ${config.request_vector_results.val}`} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
       </div>
     )
 }
