@@ -72,7 +72,8 @@ async function search(queryVector,schema,config) {
                 score: {$meta: "vectorSearchScore"},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
-                description:`$${schema.descriptionField}`
+                description:`$${schema.descriptionField}`,
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
             }
         }
     ]
