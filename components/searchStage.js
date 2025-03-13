@@ -23,9 +23,15 @@ function searchStage(query, schema) {
                 },
                 {
                     phrase: {query: query, 
-                        path: {'value':`${schema.descriptionField}`,'multi':'standardAnalyzer'},
+                        path: {'value':`${schema.titleField}`,'multi':'standardAnalyzer'},
                         slop:0,
                         score: {boost: {value: 2}}
+                    }
+                },
+                {
+                    phrase: {query: query, 
+                        path: {'value':`${schema.descriptionField}`,'multi':'standardAnalyzer'},
+                        slop:1,
                     }
                 }
             ]
