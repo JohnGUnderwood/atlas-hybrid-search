@@ -7,6 +7,7 @@ import RSF from '../components/rsf';
 import RRF from '../components/rrf';
 import FTS from '../components/fts';
 import VS from '../components/vs';
+import RerankFusion from '../components/rerankFusion';
 import SemanticBoosting from '../components/semanticBoosting';
 import {SearchInput} from '@leafygreen-ui/search-input';
 import { useState, } from 'react';
@@ -14,7 +15,7 @@ import Button from '@leafygreen-ui/button';
 import { Tabs, Tab } from '@leafygreen-ui/tabs';
 import AppBanner from '../components/banner';
 import { ToastProvider, useToast } from '@leafygreen-ui/toast';
-import { Spinner } from "@leafygreen-ui/loading-indicator";
+import LoadingIndicator from '../components/LoadingIndicator';
 import schema from '../config.mjs';
 import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
@@ -123,7 +124,7 @@ const Home = () => {
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleShowIndexes()}>Show Indexes</Button></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSampleDoc()}>Sample Doc</Button></div>
     </div>
-    {loading?<Spinner description="Loading..."/>:<></>}
+    {loading?<LoadingIndicator/>:<></>}
     <Tabs style={{marginTop:"15px"}} setSelected={setSelectedTab} selected={selectedTab}>
       <Tab name="About">
         <div style={{margin:"100px",marginTop:"50px"}}>
@@ -137,6 +138,8 @@ const Home = () => {
           <p>RRF combines lexical and vectors search using a weighted sum of their reciprocal rank. The reciprocal ranks of a result is 1/rank in the result list.</p>
           <h3>Semantic Boosting</h3>
           <p>In this strategy we use vector search to retrieve a given number of results. We then perform lexical search but boosting the unique ids of the documents returned by the vector search. This done by matching on the _id field and using the vector score as the boost value. The vector score is additive to the overall text score of the document and can be weighted by the user.</p>
+          <h3>Rerank Fusion</h3>
+          <p>Rerank Fusion combines lexical and vector search using a reranker. We let the reranker decide the best results, ignoring all previous scoring.</p>
           <h2>Reranking</h2>
           <h3>Rerank Results</h3>
           <p>When the application is run with a reranking model you can select to rerank the returned results from any of the retrieval strategies. This will send the result documents and query to the configued reranking model, which returns a new resorted result set.</p>
@@ -158,6 +161,9 @@ const Home = () => {
       </Tab>
       <Tab name="Semantic Boosting">
         <SemanticBoosting query={query} queryVector={queryVector} schema={schema}/>
+      </Tab>
+      <Tab name="Rerank Fusion">
+        <RerankFusion query={query} queryVector={queryVector} schema={schema}/>
       </Tab>
     </Tabs>
     <Modal open={open} setOpen={setOpen}>

@@ -1,6 +1,6 @@
 import { Label } from '@leafygreen-ui/typography';
 import Button from '@leafygreen-ui/button';
-import { Spinner } from "@leafygreen-ui/loading-indicator";
+import LoadingIndicator from "./LoadingIndicator";
 
 function SetParams({loading,config,heading,resetConfig,handleSliderChange}){
     return (
@@ -33,7 +33,7 @@ function SetParams({loading,config,heading,resetConfig,handleSliderChange}){
                 </>
             ))}
 
-        {loading?<Spinner description="Loading..."/>:<></>}
+        {loading?<LoadingIndicator description="Loading..."/>:<></>}
         </div>
     )
 }
