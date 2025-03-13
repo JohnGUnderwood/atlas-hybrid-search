@@ -83,8 +83,8 @@ async function search(query,queryVector,schema,config) {
           $project: {
             vs_score: 1, 
             _id: 1, 
-            title: 1,
-            image: 1,
+            title: `$${schema.titleField}`,
+            image: `$${schema.imageField}`,
             description: `$${schema.descriptionField}`,
             ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: 1}), {})
           }
@@ -108,8 +108,8 @@ async function search(query,queryVector,schema,config) {
                 $project: {
                     fts_score: 1,
                     _id: 1,
-                    title: 1,
-                    image: 1,
+                    title: `$${schema.titleField}`,
+                    image: `$${schema.imageField}`,
                     description: `$${schema.descriptionField}`,
                     ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: 1}), {})
                 }
