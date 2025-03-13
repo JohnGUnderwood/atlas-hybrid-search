@@ -17,7 +17,7 @@ import axios from "axios";
 
 const Bulb = () => <svg style={{width:"16px",flexShrink:0}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16" role="img" aria-label="Bulb Icon"><path fill="currentColor" d="M12.331 8.5a5 5 0 1 0-8.612.086L5.408 11.5a1 1 0 0 0 .866.499H6.5V6a1.5 1.5 0 1 1 3 0v6h.224a1 1 0 0 0 .863-.496L12.34 8.5h-.009Z"></path><path fill="currentColor" d="M7.5 6v6h1V6a.5.5 0 0 0-1 0ZM10 14v-1H6v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1Z"></path></svg>;
 
-function Results({queryText,response,msg,hybrid,noResultsMsg,schema}){
+function Results({queryText,response,msg,hybrid,noResultsMsg,schema,rerankOpt=true}){
     const [open, setOpen] = useState(false);
     const query = response? response.query : null;
     const time = response? response.time : null;
@@ -66,7 +66,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,schema}){
             <div style={{paddingLeft:"40px",paddingRight:"40px"}}>
                 <div style={{paddingTop:"25px"}}>
                     <div style={{display:"grid",gridTemplateColumns:"20% 50% 30%",gap:"5px",alignItems:"start"}}>
-                        {model?.reranking?.provider? <div style={{padding:"4px 16px"}}><Checkbox checked={rerank} bold={true} label={"Use Reranker"} onChange={event => setRerank(!rerank)}/></div> : <></>}
+                        {(model?.reranking?.provider && rerankOpt)? <div style={{padding:"4px 16px"}}><Checkbox checked={rerank} bold={true} label={"Use Reranker"} onChange={event => setRerank(!rerank)}/></div> : <></>}
                         <div style={{padding:"4px 16px"}}><span style={{borderRadius:"5px",backgroundColor:palette.blue.light3, padding:"2px 4px", float:"left"}}><em>{msg? `${msg}, query took ${time}ms`:`query took ${time}ms`}</em></span></div>
                         <div style={{padding:"4px 16px"}}><Button style={{float:"right"}} onClick={()=>setOpen(true)} variant="default">Show Query</Button></div>
                     </div>
