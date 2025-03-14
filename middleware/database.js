@@ -1,6 +1,8 @@
 import { MongoClient } from 'mongodb';
 import { createRouter } from 'next-connect';
 import config from '../config.mjs';
+import dotenv from 'dotenv';
+dotenv.config({override:true});
 
 async function checkCollections(client,db,coll){
     const collections = await client.db(db).listCollections().toArray()

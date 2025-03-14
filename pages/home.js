@@ -14,7 +14,6 @@ import AppBanner from '../components/banner';
 import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from '../context/AppContext';
 import LoadingIndicator from '../components/LoadingIndicator';
-import schema from '../config.mjs';
 import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
 import ExpandableCard from '@leafygreen-ui/expandable-card';
