@@ -28,7 +28,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
     const { pushToast } = useToast();
 
     useEffect(() => {
-        // Want to 'cached' reranked results so not always hitting API unless response has changed.
+        // Want to 'cache' reranked results so not always hitting API unless response has changed.
         if(rerank && rerankedResults){
             setResults(rerankedResults);
         }
@@ -91,7 +91,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                                                     r.description
                                                 }
                                             </Description>
-                                            {Object.keys(r).filter(k => !["_id","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked"].includes(k)).map(k => (
+                                            {Object.keys(r).filter(k => !["_id","fts_score","vs_score","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked"].includes(k)).map(k => (
                                                 Array.isArray(r[k])
                                                 ? (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k].join(", ")}</span></p>)
                                                 : (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k]}</span></p>)
@@ -102,7 +102,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                             {r.boost? <Banner style={{margin:"10px"}} variant="warning" image={<Bulb/>}>Semantically Boosted Result</Banner> : <></>}
-                                            {r.reranked? <Banner style={{margin:"10px"}} variant="info">Reranked {`${r.reranked}`.toUpperCase()} (score: {r.rerank_score})</Banner> : <></>}
+                                            {r.reranked? <Banner style={{margin:"10px"}} variant="info">{`${r.reranked}`.toUpperCase()} (score: {r.rerank_score})</Banner> : <></>}
                                         </div>
                                     </div>
                                 </Card>

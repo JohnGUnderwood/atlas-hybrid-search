@@ -7,15 +7,14 @@ import { baseRouter } from "../../../middleware/router";
 const router = baseRouter.clone();
 router.post(async (req, res) => {
     if(!req.body.query || !req.body.config){
-        console.log(`Request missing 'query' data`)
-        res.status(400).send(`Request missing 'query' data`);
+        console.log(`Request missing required data fields: 'query' or 'config'`)
+        res.status(400).send(`Request missing required data fields: 'query' or 'config'`);
     }else{
         const searchIndex = req.searchIndex.name;
         const vectorIndex = req.vectorIndex.name;
-
-        const config = req.body.config? req.body.config : {k:10};
         const query = req.body.query;
-
+        const config = req.body.config;
+        
         const pipeline = [
             searchStage(query,req.schema),
             projectStage(req.schema),

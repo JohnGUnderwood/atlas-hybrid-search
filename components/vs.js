@@ -5,7 +5,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 
-function VS({query,queryVector,schema}){
+function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ function VS({query,queryVector,schema}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(queryVector,schema,config)
+            search(queryVector,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -56,31 +56,13 @@ function VS({query,queryVector,schema}){
 
 export default VS;
 
-async function search(queryVector,schema,config) {
-    const pipeline = [
-        {
-            $vectorSearch: {
-                index: '',
-                path: `${schema.vectorField}`,
-                queryVector: queryVector,
-                numCandidates: config.k.val * config.overrequest_factor.val,
-                limit: config.k.val
-            }
-        },
-        {
-            $project: {
-                score: {$meta: "vectorSearchScore"},
-                title:`$${schema.titleField}`,
-                image:`$${schema.imageField}`,
-                description:`$${schema.descriptionField}`,
-                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-            }
-        }
-    ]
+async function search(queryVector,config) {
+    
     return new Promise((resolve,reject) => {
-        axios.post(`api/search`,
+        axios.post(`api/search/vector`,
             { 
-            pipeline : pipeline
+                queryVector: queryVector,
+                config: config
             },
         ).then(response => resolve(response))
         .catch((error) => {

@@ -4,10 +4,9 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,projectStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
 
-function SemanticBoosting({query,queryVector,schema}){
+function SemanticBoosting({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -58,7 +57,7 @@ function SemanticBoosting({query,queryVector,schema}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config,numCandidates)
+            search(query,queryVector,config,numCandidates)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -78,7 +77,7 @@ function SemanticBoosting({query,queryVector,schema}){
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
-                <Results queryText={query}  schema={schema} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                <Results queryText={query} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
             </div>
         </div>
     )
@@ -86,63 +85,18 @@ function SemanticBoosting({query,queryVector,schema}){
 
 export default SemanticBoosting;
 
-async function search(query,queryVector,schema,config,numCandidates) {
-    const vector_pipeline = [
-        {
-            $vectorSearch: {
-                index: '',
-                path: `${schema.vectorField}`,
-                queryVector: queryVector,
-                numCandidates: numCandidates,
-                limit: config.vector_results.val
-
-            }
-        },
-        {
-            $project: {
-                _id:0,
-                field:"_id",
-                value:"$_id",
-                score: {$meta: "vectorSearchScore"}
-            }
-        },
-        {
-            $match:{
-                score:{$gte:config.vector_score_cutoff.val}
-            }
-        }
-    ];
-    let vector_boosts = [];
-    let boost_scores = {};
-    let boost_ids = [];
-    try{
-        const vector_results = await axios.post(`api/search`,{pipeline : vector_pipeline});
-        vector_boosts = vector_results.data.results.map(r => {
-            return {
-                field: r.field,
-                value: r.value,
-                score: r.score*config.vector_weight.val
-            }
-        });
-        boost_scores = Object.fromEntries(vector_results.data.results.map(b => [b.value,b.score]));
-        boost_ids = vector_results.data.results.map(b => b.value);
-
-        var project =  projectStage(schema);
-        project.$project.boost = {$in:[{$toString:"$_id"},boost_ids]};         
-        const lexical_pipeline = [
-            searchStage(query,schema),
-            project,
-            {$limit: config.k.val}
-        ];
-        var response = await axios.post(`api/search`,
+async function search(query,queryVector,config,numCandidates) {
+    config.numCandidates = numCandidates;
+    return new Promise((resolve,reject) => {
+        axios.post(`api/search/semantic-boosting`,
             { 
-                pipeline : lexical_pipeline,
-                boosts:vector_boosts,
-            });
-        const modifiedResults = response.data.results.map(r => {r.vectorScore = boost_scores[r._id]; return r});
-        response.data.results = modifiedResults;
-        return response;
-    }catch(error){
-        throw error?.response?.data?.error || error;
-    };
+                query: query,
+                queryVector: queryVector,
+                config: config
+            },
+        ).then(response => resolve(response))
+        .catch((error) => {
+            reject(error.response.data.error);
+        })
+    });
 }

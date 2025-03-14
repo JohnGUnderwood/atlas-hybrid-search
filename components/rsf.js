@@ -6,7 +6,7 @@ import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {searchStage} from "../lib/pipelineStages";
 
-function RSF({query,queryVector,schema}){
+function RSF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -62,7 +62,7 @@ function RSF({query,queryVector,schema}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config)
+            search(query,queryVector,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -78,91 +78,21 @@ function RSF({query,queryVector,schema}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Relative Score Fusion Params"/>
-            <Results queryText={query} schema={schema} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            <Results queryText={query} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
     )
 }
 
 export default RSF;
 
-async function search(query,queryVector,schema,config) {
+async function search(query,queryVector,config) {
     
-
-    const pipeline = [
-        {
-            $vectorSearch:{
-                index: '',
-                queryVector: queryVector,
-                path:`${schema.vectorField}`,
-                numCandidates: config.k.val * config.overrequest_factor.val,
-                limit: config.k.val * 2
-            }
-        },
-        {$addFields: {"vs_score": {$meta: "vectorSearchScore"}}},
-        {
-            $project:{
-                title:`$${schema.titleField}`,
-                image:`$${schema.imageField}`,
-                description:`$${schema.descriptionField}`,
-                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {}),
-                vs_score: {$multiply:[config.vector_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$vs_score"]}}]}]}]},//Sigmoid function: 1/(1+exp(-x))
-            }
-        },
-        {
-            $unionWith: {
-                coll: '',
-                pipeline: [
-                    searchStage(query,schema),
-                    {$limit: config.k.val * 2},
-                    {$addFields: {fts_score: {$meta: "searchScore"}}},
-                    {
-                        $project: {
-                            fts_score: {$multiply:[config.fts_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$fts_score"]}}]}]}]},//Using sigmoid function: 1/(1+exp(-x))
-                            title:`$${schema.titleField}`,
-                            image:`$${schema.imageField}`,
-                            description:`$${schema.descriptionField}`,
-                            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-                        }
-                    },
-                ],
-            }
-        },
-        {
-            $group: {
-                _id: "$_id",
-                vs_score: {$max: "$vs_score"},
-                fts_score: {$max: "$fts_score"},
-                title:{$first:"$title"},
-                image:{$first:"$image"},
-                description:{$first:"$description"},
-                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: {$first:`$${f}`}}), {})
-            }
-        },
-        {
-            $project: {
-                _id: 1,
-                title:1,
-                image:1,
-                description:1,
-                vs_score: {$ifNull: ["$vs_score", 0]},
-                fts_score: {$ifNull: ["$fts_score", 0]},
-                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-            }
-        },
-        {
-            $addFields:{
-                score: {
-                    $add: ["$fts_score", "$vs_score"],
-                },
-            }
-        },
-        {$sort: {"score": -1}},
-        {$limit: config.k.val}
-    ]
     return new Promise((resolve,reject) => {
-        axios.post(`api/search`,
+        axios.post(`api/search/rsf`,
             { 
-            pipeline : pipeline
+                query: query,
+                queryVector: queryVector,
+                config: config
             },
         ).then(response => resolve(response))
         .catch((error) => {

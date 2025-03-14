@@ -3,20 +3,16 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,projectStage} from "../lib/pipelineStages";
 
-function FTS({query,schema}){
+function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
-    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if(query){
-            setLoading(true);
             search(query)
             .then(resp => {
                 setResponse(resp.data);
-                setLoading(false);
             })
             .catch(error => {
                 console.log(error);
