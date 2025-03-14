@@ -10,7 +10,7 @@ const MDB_COLL = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_
 console.log("Database: ", MDB_DB);
 console.log("Collection: ", MDB_COLL);
 
-const schema = config[`${process.env.SCHEMA_NAME || "default"}`];
+const schema = config[`${process.env.SCHEMA || "default"}`];
 console.log("Schema: ", schema);
 
 //use the serverless function that has been started under nodeJS.
