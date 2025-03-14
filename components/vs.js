@@ -4,12 +4,12 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-
-function VS({query,queryVector,schema}){
+import {useApp} from "../context/AppContext";
+function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
@@ -80,7 +80,7 @@ async function search(queryVector,schema,config) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-            pipeline : pipeline
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

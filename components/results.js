@@ -8,27 +8,27 @@ import Button from '@leafygreen-ui/button';
 import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
 import Banner from '@leafygreen-ui/banner'
-import createHighlighting from "./highlighting";
+import createHighlighting from "../lib/highlighting";
 import Checkbox from '@leafygreen-ui/checkbox';
 import { useEffect } from "react";
 import { useToast } from '@leafygreen-ui/toast';
-import { useModel } from '../context/ModelContext';
+import { useApp } from '../context/AppContext';
 import axios from "axios";
 
 const Bulb = () => <svg style={{width:"16px",flexShrink:0}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16" role="img" aria-label="Bulb Icon"><path fill="currentColor" d="M12.331 8.5a5 5 0 1 0-8.612.086L5.408 11.5a1 1 0 0 0 .866.499H6.5V6a1.5 1.5 0 1 1 3 0v6h.224a1 1 0 0 0 .863-.496L12.34 8.5h-.009Z"></path><path fill="currentColor" d="M7.5 6v6h1V6a.5.5 0 0 0-1 0ZM10 14v-1H6v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1Z"></path></svg>;
 
-function Results({queryText,response,msg,hybrid,noResultsMsg,schema,rerankOpt=true}){
+function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
     const [open, setOpen] = useState(false);
     const query = response? response.query : null;
     const time = response? response.time : null;
-    const model = useModel();
+    const {model,schema} = useApp();
     const [rerank, setRerank] = useState(false);
     const [results, setResults] = useState(response? response.results.length > 0? response.results : null : null);
     const [rerankedResults, setRerankedResults] = useState(null);
     const { pushToast } = useToast();
 
     useEffect(() => {
-        // Want to 'cached' reranked results so not always hitting API unless response has changed.
+        // Want to 'cache' reranked results so not always hitting API unless response has changed.
         if(rerank && rerankedResults){
             setResults(rerankedResults);
         }
@@ -91,7 +91,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,schema,rerankOpt=tr
                                                     r.description
                                                 }
                                             </Description>
-                                            {Object.keys(r).filter(k => !["_id","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked"].includes(k)).map(k => (
+                                            {Object.keys(r).filter(k => !["_id","fts_score","vs_score","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked"].includes(k)).map(k => (
                                                 Array.isArray(r[k])
                                                 ? (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k].join(", ")}</span></p>)
                                                 : (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k]}</span></p>)
@@ -102,7 +102,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,schema,rerankOpt=tr
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                             {r.boost? <Banner style={{margin:"10px"}} variant="warning" image={<Bulb/>}>Semantically Boosted Result</Banner> : <></>}
-                                            {r.reranked? <Banner style={{margin:"10px"}} variant="info">Reranked {`${r.reranked}`.toUpperCase()} (score: {r.rerank_score})</Banner> : <></>}
+                                            {r.reranked? <Banner style={{margin:"10px"}} variant="info">{`${r.reranked}`.toUpperCase()} (score: {r.rerank_score})</Banner> : <></>}
                                         </div>
                                     </div>
                                 </Card>

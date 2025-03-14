@@ -1,9 +1,9 @@
 import { MongoDBLogoMark } from "@leafygreen-ui/logo";
 import { H1, H2} from "@leafygreen-ui/typography";
-import { useModel } from '../context/ModelContext';
+import { useApp } from '../context/AppContext';
 
 function AppBanner({heading,children}){
-    const model = useModel();
+    const {model} = useApp();
     return(
         <div>
             <div style={{marginRight:"auto"}}>
