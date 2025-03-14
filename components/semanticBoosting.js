@@ -4,9 +4,8 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import searchStage from "./searchStage";
+import {searchStage,projectStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
-import projectStage from "./projectStage";
 
 function SemanticBoosting({query,queryVector,schema}){
     const { pushToast } = useToast();

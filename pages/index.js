@@ -20,7 +20,7 @@ import schema from '../config.mjs';
 import Modal from '@leafygreen-ui/modal';
 import Code from '@leafygreen-ui/code';
 import ExpandableCard from '@leafygreen-ui/expandable-card';
-import { ModelProvider } from '../context/ModelContext';
+import { AppProvider } from '../context/AppContext';
 
 const Home = () => {
   const { pushToast } = useToast();
@@ -243,10 +243,10 @@ function getQueryCache(terms){
 
 export default function App(){
   return (
-    <ModelProvider>
+    <AppProvider>
       <ToastProvider>
         <Home/>
       </ToastProvider>
-    </ModelProvider>
+    </AppProvider>
   )
 }

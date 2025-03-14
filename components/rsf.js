@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import searchStage from "./searchStage";
+import {searchStage} from "../lib/pipelineStages";
 
 function RSF({query,queryVector,schema}){
     const { pushToast } = useToast();
