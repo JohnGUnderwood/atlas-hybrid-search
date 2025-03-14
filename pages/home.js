@@ -132,7 +132,7 @@ const Home = () => {
         <SemanticBoosting query={query} queryVector={queryVector}/>
       </Tab>
       <Tab name="Rerank Fusion">
-        <RerankFusion query={query} queryVector={queryVector} schema={schema}/>
+        <RerankFusion query={query} queryVector={queryVector}/>
       </Tab>
     </Tabs>
     <Modal open={open} setOpen={setOpen}>

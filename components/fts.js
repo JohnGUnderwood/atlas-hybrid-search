@@ -3,14 +3,15 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
-
+import {searchStage,projectStage} from "../lib/pipelineStages";
+import {useApp} from "../context/AppContext";
 function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
-
+    const {schema} = useApp();
     useEffect(() => {
         if(query){
-            search(query)
+            search(query,schema)
             .then(resp => {
                 setResponse(resp.data);
             })
@@ -29,12 +30,19 @@ function FTS({query}){
 
 export default FTS;
 
-async function search(query) {
+async function search(query,schema) {
+    // CONFIGURATION PARAMETERS
+    const k = 10
+
+    const pipeline = [
+        searchStage(query,schema),
+        projectStage(schema),
+        {$limit: k}
+    ]
     return new Promise((resolve,reject) => {
-        axios.post(`api/search/fts`,
+        axios.post(`api/search`,
             { 
-                query: query,
-                config : {k:10}
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

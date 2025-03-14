@@ -4,13 +4,15 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
+import {searchStage,projectStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
+import { useApp } from "../context/AppContext";
 
 function SemanticBoosting({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_results : {val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
@@ -57,7 +59,7 @@ function SemanticBoosting({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,config,numCandidates)
+            search(query,queryVector,schema,config,numCandidates)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -85,18 +87,63 @@ function SemanticBoosting({query,queryVector}){
 
 export default SemanticBoosting;
 
-async function search(query,queryVector,config,numCandidates) {
-    config.numCandidates = numCandidates;
-    return new Promise((resolve,reject) => {
-        axios.post(`api/search/semantic-boosting`,
-            { 
-                query: query,
+async function search(query,queryVector,schema,config,numCandidates) {
+    const vector_pipeline = [
+        {
+            $vectorSearch: {
+                index: '',
+                path: `${schema.vectorField}`,
                 queryVector: queryVector,
-                config: config
-            },
-        ).then(response => resolve(response))
-        .catch((error) => {
-            reject(error.response.data.error);
-        })
-    });
+                numCandidates: numCandidates,
+                limit: config.vector_results.val
+
+            }
+        },
+        {
+            $project: {
+                _id:0,
+                field:"_id",
+                value:"$_id",
+                score: {$meta: "vectorSearchScore"}
+            }
+        },
+        {
+            $match:{
+                score:{$gte:config.vector_score_cutoff.val}
+            }
+        }
+    ];
+    let vector_boosts = [];
+    let boost_scores = {};
+    let boost_ids = [];
+    try{
+        const vector_results = await axios.post(`api/search`,{pipeline : vector_pipeline});
+        vector_boosts = vector_results.data.results.map(r => {
+            return {
+                field: r.field,
+                value: r.value,
+                score: r.score*config.vector_weight.val
+            }
+        });
+        boost_scores = Object.fromEntries(vector_results.data.results.map(b => [b.value,b.score]));
+        boost_ids = vector_results.data.results.map(b => b.value);
+
+        var project =  projectStage(schema);
+        project.$project.boost = {$in:[{$toString:"$_id"},boost_ids]};         
+        const lexical_pipeline = [
+            searchStage(query,schema),
+            project,
+            {$limit: config.k.val}
+        ];
+        var response = await axios.post(`api/search`,
+            { 
+                pipeline : lexical_pipeline,
+                boosts:vector_boosts,
+            });
+        const modifiedResults = response.data.results.map(r => {r.vectorScore = boost_scores[r._id]; return r});
+        response.data.results = modifiedResults;
+        return response;
+    }catch(error){
+        throw error?.response?.data?.error || error;
+    };
 }

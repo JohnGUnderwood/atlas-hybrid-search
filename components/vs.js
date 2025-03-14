@@ -4,12 +4,12 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-
+import {useApp} from "../context/AppContext";
 function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         k : {val:10,range:[1,25],step:1,comment:"Number of results"},
@@ -33,7 +33,7 @@ function VS({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(queryVector,config)
+            search(queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -56,13 +56,31 @@ function VS({query,queryVector}){
 
 export default VS;
 
-async function search(queryVector,config) {
-    
-    return new Promise((resolve,reject) => {
-        axios.post(`api/search/vector`,
-            { 
+async function search(queryVector,schema,config) {
+    const pipeline = [
+        {
+            $vectorSearch: {
+                index: '',
+                path: `${schema.vectorField}`,
                 queryVector: queryVector,
-                config: config
+                numCandidates: config.k.val * config.overrequest_factor.val,
+                limit: config.k.val
+            }
+        },
+        {
+            $project: {
+                score: {$meta: "vectorSearchScore"},
+                title:`$${schema.titleField}`,
+                image:`$${schema.imageField}`,
+                description:`$${schema.descriptionField}`,
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+            }
+        }
+    ]
+    return new Promise((resolve,reject) => {
+        axios.post(`api/search`,
+            { 
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

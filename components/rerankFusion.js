@@ -5,12 +5,12 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {searchStage} from "../lib/pipelineStages";
-
-function RerankFusion({query,queryVector,schema}){
+import {useApp} from "../context/AppContext";
+function RerankFusion({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {      
       k : {val:10,range:[1,25],step:1,comment:"Number of user facing results"},
@@ -151,7 +151,7 @@ async function search(query,queryVector,schema,config) {
     const searchPromise = new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-            pipeline : pipeline
+              pipeline : pipeline
             },
         ).then(response => {
             console.log(response.data);
@@ -163,7 +163,7 @@ async function search(query,queryVector,schema,config) {
         })
         .then(rerankResponse => {
             // trim array to k results            
-            resolve({results: rerankResponse.data.slice(0,config.k.val), query: query, time: 0});
+            resolve({results: rerankResponse.data.slice(0,config.k.val), query: pipeline, time: 0});
         })
         .catch((error) => {
             reject(error.response?.data?.error || error.message);

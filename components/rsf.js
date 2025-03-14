@@ -5,12 +5,12 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {searchStage} from "../lib/pipelineStages";
-
+import {useApp} from "../context/AppContext";
 function RSF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
@@ -62,7 +62,7 @@ function RSF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,config)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -85,14 +85,84 @@ function RSF({query,queryVector}){
 
 export default RSF;
 
-async function search(query,queryVector,config) {
+async function search(query,queryVector,schema,config) {
     
-    return new Promise((resolve,reject) => {
-        axios.post(`api/search/rsf`,
-            { 
-                query: query,
+
+    const pipeline = [
+        {
+            $vectorSearch:{
+                index: '',
                 queryVector: queryVector,
-                config: config
+                path:`${schema.vectorField}`,
+                numCandidates: config.k.val * config.overrequest_factor.val,
+                limit: config.k.val * 2
+            }
+        },
+        {$addFields: {"vs_score": {$meta: "vectorSearchScore"}}},
+        {
+            $project:{
+                title:`$${schema.titleField}`,
+                image:`$${schema.imageField}`,
+                description:`$${schema.descriptionField}`,
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {}),
+                vs_score: {$multiply:[config.vector_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$vs_score"]}}]}]}]},//Sigmoid function: 1/(1+exp(-x))
+            }
+        },
+        {
+            $unionWith: {
+                coll: '',
+                pipeline: [
+                    searchStage(query,schema),
+                    {$limit: config.k.val * 2},
+                    {$addFields: {fts_score: {$meta: "searchScore"}}},
+                    {
+                        $project: {
+                            fts_score: {$multiply:[config.fts_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$fts_score"]}}]}]}]},//Using sigmoid function: 1/(1+exp(-x))
+                            title:`$${schema.titleField}`,
+                            image:`$${schema.imageField}`,
+                            description:`$${schema.descriptionField}`,
+                            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+                        }
+                    },
+                ],
+            }
+        },
+        {
+            $group: {
+                _id: "$_id",
+                vs_score: {$max: "$vs_score"},
+                fts_score: {$max: "$fts_score"},
+                title:{$first:"$title"},
+                image:{$first:"$image"},
+                description:{$first:"$description"},
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: {$first:`$${f}`}}), {})
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                title:1,
+                image:1,
+                description:1,
+                vs_score: {$ifNull: ["$vs_score", 0]},
+                fts_score: {$ifNull: ["$fts_score", 0]},
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+            }
+        },
+        {
+            $addFields:{
+                score: {
+                    $add: ["$fts_score", "$vs_score"],
+                },
+            }
+        },
+        {$sort: {"score": -1}},
+        {$limit: config.k.val}
+    ]
+    return new Promise((resolve,reject) => {
+        axios.post(`api/search`,
+            { 
+            pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

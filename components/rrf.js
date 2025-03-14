@@ -4,13 +4,14 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
+import { useApp } from "../context/AppContext";
 import {searchStage} from "../lib/pipelineStages";
 
 function RRF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
       vector_penalty : {val:1,range:[0,20],step:1,comment:"Penalise vector results score"},
@@ -36,7 +37,7 @@ function RRF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-            search(query,queryVector,config)
+            search(query,queryVector,config,schema)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -59,14 +60,126 @@ function RRF({query,queryVector}){
 
 export default RRF;
 
-async function search(query,queryVector,config) {
-
+async function search(query,queryVector,config,schema) {
+    
+    const pipeline = [
+        {
+          $vectorSearch: {
+            index: '',
+            path: `${schema.vectorField}`,
+            queryVector: queryVector,
+            numCandidates: config.k.val * config.overrequest_factor.val,
+            limit: config.k.val * 2
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            docs: {$push: "$$ROOT"}
+          }
+        },
+        {
+          $unwind: {
+            path: "$docs", 
+            includeArrayIndex: "rank"
+          }
+        },
+        {
+          $addFields: {
+            vs_score: {
+              $divide: [1.0, {$add: ["$rank", config.vector_penalty.val, 1]}]
+            }
+          }
+        },
+        {
+          $project: {
+            vs_score: 1, 
+            _id: "$docs._id", 
+            title:`$docs.${schema.titleField}`,
+            image:`$docs.${schema.imageField}`,
+            description:`$docs.${schema.descriptionField}`,
+            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$docs.${f}`}), {})
+          }
+        },
+        {
+          $unionWith: {
+            coll: '',
+            pipeline: [
+              searchStage(query,schema),
+              {
+                $limit: config.k.val
+              },
+              {
+                $group: {
+                  _id: null,
+                  docs: {$push: "$$ROOT"}
+                }
+              },
+              {
+                $unwind: {
+                  path: "$docs", 
+                  includeArrayIndex: "rank"
+                }
+              },
+              {
+                $addFields: {
+                  fts_score: {
+                    $divide: [
+                      1.0,
+                      {$add: ["$rank", config.fts_penalty.val, 1]}
+                    ]
+                  }
+                }
+              },
+              {
+                $project: {
+                    fts_score: 1,
+                    _id:"$docs._id",
+                    title:`$docs.${schema.titleField}`,
+                    image:`$docs.${schema.imageField}`,
+                    description:`$docs.${schema.descriptionField}`,
+                    ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+                }
+              }
+            ]
+          }
+        },
+        {
+          $group: {
+            _id: "$_id",
+            vs_score: {$max: "$vs_score"},
+            fts_score: {$max: "$fts_score"},
+            title:{$first:"$title"},
+            image:{$first:"$image"},
+            description:{$first:"$description"},
+            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: {$first:`$${f}`}}), {})
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            image:1,
+            description:1,
+            vs_score: {$ifNull: ["$vs_score", 0]},
+            fts_score: {$ifNull: ["$fts_score", 0]},
+            ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+          }
+        },
+        {
+          $addFields:{
+              score: {
+                  $add: ["$fts_score", "$vs_score"],
+              },
+          }
+        },
+        {$sort: {score: -1}},
+        {$limit: config.k.val}
+    ]
     return new Promise((resolve,reject) => {
-        axios.post(`api/search/rrf`,
+        axios.post(`api/search`,
             { 
-              query:query,
-              queryVector:queryVector,
-              config:config,
+              pipeline:pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {
