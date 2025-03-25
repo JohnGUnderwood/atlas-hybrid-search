@@ -34,6 +34,14 @@ const config = {
         searchFields: ["class"],
         vectorField : "name_embedding",
         vectorSourceField: "name"
+    },
+    news:{
+        descriptionField : "content", 
+        titleField : "title",
+        imageField : "image",
+        searchFields: [],
+        vectorField : "embedding",
+        vectorSourceField: "content"
     }
 }
 
