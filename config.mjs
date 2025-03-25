@@ -18,7 +18,7 @@ const config = {
         searchFields: ["cast, genres"],
         vectorField : "plot_embedding",
         vectorSourceField: "plot"
-    },
+    }, 
     movies:{
         descriptionField : "fullplot",
         titleField : "title",
@@ -42,7 +42,15 @@ const config = {
         searchFields: [],
         vectorField : "embedding",
         vectorSourceField: "content"
-    }
+    },
+    deployed:{
+        descriptionField : "fullplot",
+        titleField : "title",
+        imageField : "poster",
+        searchFields: ["cast","genres"],
+        vectorField : "doc_embedding",
+        vectorSourceField: ["title","fullplot","cast","genres"],
+    },
 }
 
 export default config;
