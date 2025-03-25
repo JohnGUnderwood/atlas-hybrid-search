@@ -53,9 +53,11 @@ class VoyageAIModel {
             const reranked = resp.data.data.map((r,idx) => {
                 var doc = docMap[`${r.index}`];
                 if(idx < parseInt(r.index)){
-                    doc.reranked = "up"
+                    doc.reranked = "moved up"
                 }else if(idx > parseInt(r.index)){
-                    doc.reranked = "down"
+                    doc.reranked = "moved down"
+                }else{
+                    doc.reranked = "not reranked"
                 }
                 doc.rerank_score = r.relevance_score;
                 return doc;

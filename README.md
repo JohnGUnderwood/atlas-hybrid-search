@@ -18,7 +18,7 @@ In order to perform vector search the input text query must be encoded (turned i
 At the moment the app is set so you can switch between [OpenAI](https://platform.openai.com/docs/guides/embeddings), [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/understand-embeddings), [Nomic](https://docs.nomic.ai/reference/endpoints/nomic-embed-text), [Mistral](https://docs.mistral.ai/capabilities/embeddings/) and [Voyage AI](https://docs.voyageai.com/reference/embeddings-api). To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file. 
 
 
-If you are confident with code you could add another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/model).
+If you are confident with code you could add another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/models).
 
 ### In the application
 In the app the API call to embed the query is made only when the 'vector search' button is selected. The search queries to the database are run each time the parameter values are changed or the different tabs are selected. But the query vector is not regenerated.
@@ -41,7 +41,7 @@ npm install
 ## Load MongoDB Sample Data (optional)
 To get the default setup to work you need to [load sample data](https://www.mongodb.com/docs/atlas/sample-data/) into your Atlas Cluster.
 
-If you opt not to use the sample data you will need to modify the variables in [`config.mjs`](config.mjs) to work with your schema and make sure you have embedded data (see below).
+If you opt not to use the sample data you will need to modify the variables in [`config.mjs`](config.mjs) to work with your schema and make sure you have embedded data (see below). You can setup multiple schemas and then select which one to run the app with using the `SCHEMA` environment variable. This defaults to `default`.
 
 You will also need to make sure that the `MDB_SEARCHIDX`, and `MDB_VECTORIDX` schema variables are set appropriately. These variables are used when running searches and for hybrid search to join vector results with text search results.
 
@@ -68,7 +68,9 @@ node embed-data.mjs
 ```
 
 ## Create search indexes
-You must have created your `.env` by copying and renaming the `example.env` provided as the `create-search-indexes.mjs` script uses these values. If you are not using the `sample_mflix.embedded_movies` data then you must modify the search index definitions in the script to match your schema.
+You must have created your `.env` by copying and renaming the `example.env` provided as the `create-search-indexes.mjs` script uses these values. The search indexes script attempts to create indexes based on the schema defined in `config.mjs` and selected using the `SCHEMA` environment variable. But if you are not using the `sample_mflix.embedded_movies` data then you might need to modify the search index definitions in the script to match your schema.
+
+N.B. if you make changes to the text search index you may need to also modify the text [search stage defintion](lib/pipelineStages.js)
 
 Run
 ```

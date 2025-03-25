@@ -1,7 +1,8 @@
+// /api/rerank route
+
 import { baseRouter } from "../../../middleware/router";
 
 const router = baseRouter.clone();
-// Handle /api/rerank route
 router.post(async (req, res) => {
     if(!req.body.query && !req.body.documents){
         console.log(`Request body must have 'query' and 'documents'`)

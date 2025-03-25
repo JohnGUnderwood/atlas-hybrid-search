@@ -4,15 +4,15 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import searchStage from "./searchStage";
+import {searchStage,projectStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
-import projectStage from "./projectStage";
+import { useApp } from "../context/AppContext";
 
-function SemanticBoosting({query,queryVector,schema}){
+function SemanticBoosting({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_results : {val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
@@ -79,7 +79,7 @@ function SemanticBoosting({query,queryVector,schema}){
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
-                <Results queryText={query}  schema={schema} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                <Results queryText={query} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
             </div>
         </div>
     )

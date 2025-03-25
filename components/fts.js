@@ -3,21 +3,17 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
-import searchStage from "./searchStage";
-import projectStage from "./projectStage";
-
-function FTS({query,schema}){
+import {searchStage,projectStage} from "../lib/pipelineStages";
+import {useApp} from "../context/AppContext";
+function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
-    const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     useEffect(() => {
         if(query){
-            setLoading(true);
             search(query,schema)
             .then(resp => {
                 setResponse(resp.data);
-                setLoading(false);
             })
             .catch(error => {
                 console.log(error);
@@ -28,7 +24,7 @@ function FTS({query,schema}){
     },[query]);
 
     return (
-        <Results queryText={query} schema={schema} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
+        <Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
     )
 }
 
@@ -46,7 +42,7 @@ async function search(query,schema) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-            pipeline : pipeline
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

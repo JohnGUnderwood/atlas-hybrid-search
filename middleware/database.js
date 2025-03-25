@@ -1,5 +1,8 @@
 import { MongoClient } from 'mongodb';
 import { createRouter } from 'next-connect';
+import config from '../config.mjs';
+import dotenv from 'dotenv';
+dotenv.config({override:true});
 
 async function checkCollections(client,db,coll){
     const collections = await client.db(db).listCollections().toArray()
@@ -20,7 +23,9 @@ async function checkCollections(client,db,coll){
 async function getSearchIndex(client,db,coll,indexName){
     const indexes = await client.db(db).collection(coll).listSearchIndexes(indexName).toArray();
     if(indexes.length > 0){
-        return indexes[0]['latestDefinition'];
+        var definition = indexes[0]['latestDefinition'];
+        definition.name = indexName;
+        return definition;
     }else{
         console.log(`No index ${indexName} found in collection: ${coll}`,{cause:"NoSearchIndexes"})
         throw new Error(`No indexes found in collection: ${coll}`,{cause:"NoSearchIndexes"})
@@ -33,7 +38,6 @@ async function mongodb(){
     const coll = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
     const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
     const vectorIndex = process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex";
-
     try{
         const thisClient = new MongoClient(uri);
         try{
@@ -78,7 +82,11 @@ async function middleware(req, res, next) {
     req.db = req.dbClient.db(connection.db);
     req.collection = req.db.collection(connection.coll);
     req.searchIndex = connection.searchIndex;
-    req.vectorIndex = connection.vectorIndex; 
+    req.vectorIndex = connection.vectorIndex;
+
+    const schemaName = process.env.SCHEMA ? process.env.SCHEMA : "default";
+    req.schema = config[schemaName]; 
+    console.log(`Connected to database: ${connection.db}\ncollection: ${connection.coll}\nsearchIndex: ${connection.searchIndex.name}\nvectorIndex: ${connection.vectorIndex.name}\nschema: ${schemaName}`)
     return next();
 }
 

@@ -1,3 +1,5 @@
+// /api/embed/cache route
+
 import { baseRouter } from "../../../middleware/router";
 
 const router = baseRouter.clone();

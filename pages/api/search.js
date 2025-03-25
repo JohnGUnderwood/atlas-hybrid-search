@@ -1,3 +1,5 @@
+// /api/search route
+
 import { baseRouter } from "../../middleware/router";
 import { ObjectId } from 'mongodb';
 

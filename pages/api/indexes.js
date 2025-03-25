@@ -1,3 +1,5 @@
+// /api/indexes route
+
 import { baseRouter } from "../../middleware/router";
 
 const router = baseRouter.clone();

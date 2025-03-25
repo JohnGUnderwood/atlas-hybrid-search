@@ -4,13 +4,14 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import searchStage from "./searchStage";
+import { useApp } from "../context/AppContext";
+import {searchStage} from "../lib/pipelineStages";
 
-function RRF({query,queryVector,schema}){
+function RRF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
       vector_penalty : {val:1,range:[0,20],step:1,comment:"Penalise vector results score"},
@@ -36,7 +37,7 @@ function RRF({query,queryVector,schema}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-            search(query,queryVector,schema,config)
+            search(query,queryVector,config,schema)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -52,14 +53,14 @@ function RRF({query,queryVector,schema}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Reciprocal Rank Fusion Params"/>
-          <Results queryText={query} schema={schema} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+          <Results queryText={query} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
       </div>
     )
 }
 
 export default RRF;
 
-async function search(query,queryVector,schema,config) {
+async function search(query,queryVector,config,schema) {
     
     const pipeline = [
         {
@@ -178,7 +179,7 @@ async function search(query,queryVector,schema,config) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-            pipeline : pipeline
+              pipeline:pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

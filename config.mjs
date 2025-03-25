@@ -1,30 +1,48 @@
 // schema variables
-const schema = {
-    // Display fields in results
-    descriptionField : "fullplot", // this field is used for reranking if turned on.
-    titleField : "title",
-    imageField : "poster",
-    // An additional fields for searching over
-    searchFields: ["cast","genres"],
-    // Vector search field
-    vectorField : "doc_embedding",
-    // Source for embedding when using embed-data.mjs. 
-    // If more than one value they are concatenated before embedding using: <fieldname>: <fieldvalue>\n
-    // vectorSourceField: "fullplot"
-    vectorSourceField: ["title","fullplot","cast","genres"],
+// Display fields in results
+// descriptionField :// this field is used for reranking if turned on.
+// titleField : // this field is used for displaying the title in the results. And as fallback for reranking.,
+// imageField : // this field is used for displaying the image in the results.,
+// An additional fields for searching over
+// searchFields: [],
+// Vector search field
+// vectorField : // this field is used for vector search.,
+// Source for embedding when using embed-data.mjs. 
+// If more than one value they are concatenated before embedding using: <fieldname>: <fieldvalue>\n
+// vectorSourceField: ""|[],
+const config = {
+    default:{
+        descriptionField : "plot",
+        titleField : "title",
+        imageField : "poster",
+        searchFields: ["cast, genres"],
+        vectorField : "plot_embedding",
+        vectorSourceField: "plot"
+    },
+    movies:{
+        descriptionField : "fullplot",
+        titleField : "title",
+        imageField : "poster",
+        searchFields: ["cast","genres"],
+        vectorField : "voyage_doc_embedding",
+        vectorSourceField: ["title","fullplot","cast","genres"],
+    },
+    best_buy:{
+        descriptionField : "shortDescription", 
+        titleField : "name",
+        imageField : "image",
+        searchFields: ["class"],
+        vectorField : "name_embedding",
+        vectorSourceField: "name"
+    },
+    news:{
+        descriptionField : "content", 
+        titleField : "title",
+        imageField : "image",
+        searchFields: [],
+        vectorField : "embedding",
+        vectorSourceField: "content"
+    }
 }
 
-// const schema = {
-//     // display fields in results
-//     descriptionField : "shortDescription", 
-//     titleField : "name",
-//     imageField : "image",
-//     // an additional fields for searching over
-//     searchFields: ["class"],
-//     // vector search field
-//     vectorField : "name_embedding",
-//     // source for embedding when using embed-data.mjs
-//     vectorSourceField: "name"
-// }
-
-export default schema;
+export default config;

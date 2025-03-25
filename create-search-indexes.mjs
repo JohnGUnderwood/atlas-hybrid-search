@@ -1,8 +1,10 @@
 import { MongoClient, MongoError } from 'mongodb';
 import dotenv from 'dotenv';
-import schema from './config.mjs';
+import config from './config.mjs';
 dotenv.config({override:true});
 
+const schema = config[`${process.env.SCHEMA || "default"}`];
+console.log("Schema: ", schema);
 const searchIndex = {
   name:process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex",
   definition: {

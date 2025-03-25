@@ -3,7 +3,7 @@ import Head from 'next/head';
 function Header(){
     return (
         <Head>
-            <title>Search App</title>
+            <title>Hybrid Search</title>
             <link rel="icon" href="/favicon.ico" />
         </Head>
     )
