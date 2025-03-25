@@ -25,7 +25,7 @@
     "@leafygreen-ui/typography": "^18.0.1",
     "@leafygreen-ui/checkbox": "^13.0.0",
     "@mistralai/mistralai": "^0.0.10",
-    "axios": "^1.6.2",
+    "axios": "^1.8.2",
     "dotenv": "^16.3.1",
     "mongodb": "^6.6.2",
     "next": "^14.2.26",
