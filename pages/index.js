@@ -1,4 +1,4 @@
-import Home from './home';
+import Home from '../components/home';
 import { AppProvider } from '../context/AppContext';
 import { ToastProvider } from '@leafygreen-ui/toast';
 
