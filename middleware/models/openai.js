@@ -19,7 +19,8 @@ class OpenAIModel {
             const resp = await this.client.embeddings.create({
                 model:this.model,
                 input:string,
-                encoding_format:"float"
+                encoding_format:"float",
+                dimensions: this.dimensions,
               })
             return resp.data[0].embedding;
         }catch(error){
