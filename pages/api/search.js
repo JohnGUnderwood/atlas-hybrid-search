@@ -18,6 +18,10 @@ function setVariables(pipeline){
                 newPipeline.push({...stage,$vectorSearch:{...stage.$vectorSearch, index:vectorIndex}})
             }else if('$unionWith' in stage){
                 newPipeline.push({...stage,$unionWith:{...stage.$unionWith,coll:searchCollection,pipeline:setVariables(stage.$unionWith.pipeline)}})
+            }else if('$rankFusion' in stage){
+                stage['$rankFusion'].input.pipelines.vectorPipeline = setVariables(stage['$rankFusion'].input.pipelines.vectorPipeline);
+                stage['$rankFusion'].input.pipelines.fullTextPipeline = setVariables(stage['$rankFusion'].input.pipelines.fullTextPipeline);
+                newPipeline.push(stage);
             }else{
                 newPipeline.push(stage);
             }

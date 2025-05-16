@@ -15,49 +15,13 @@ function RSF({query,queryVector}){
     const defaultConfig = {
         vector_scalar : {val:0.9,range:[0,1],step:0.1,comment:"Vector search score scaling factor (1 - fts_scalar)"},
         fts_scalar : {val:0.1,range:[0,1],step:0.1,comment:"FTS score scaling factor (1 - vector_scalar)"}, 
-        k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"}
+        limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
+        numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
         setConfig(defaultConfig);
     }
-
-    const handleSliderChange = (param, newValue) => {
-        if(param == "fts_scalar"){
-            setConfig({
-                ...config,
-                fts_scalar: {
-                  ...config.fts_scalar,
-                  val:parseFloat(newValue)
-                },
-                vector_scalar: {
-                    ...config.vector_scalar,
-                    val: parseFloat(1-newValue)
-                }
-              });
-        }else if(param == "vector_scalar"){
-            setConfig({
-                ...config,
-                vector_scalar: {
-                  ...config.vector_scalar,
-                  val:parseFloat(newValue)
-                },
-                fts_scalar: {
-                    ...config.fts_scalar,
-                    val: parseFloat(1-newValue)
-                }
-              });
-        }else{
-            setConfig({
-                ...config,
-                [param]: {
-                  ...config[param],
-                  val:parseFloat(newValue)
-                }
-              });
-        }
-      };
 
     useEffect(() => {
         if(queryVector){
@@ -77,8 +41,8 @@ function RSF({query,queryVector}){
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Relative Score Fusion Params"/>
-            <Results queryText={query} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Relative Score Fusion Params"/>
+            <Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
     )
 }
@@ -94,8 +58,8 @@ async function search(query,queryVector,schema,config) {
                 index: '',
                 queryVector: queryVector,
                 path:`${schema.vectorField}`,
-                numCandidates: config.k.val * config.overrequest_factor.val,
-                limit: config.k.val * 2
+                numCandidates: config.numCandidates.val,
+                limit: Math.min(config.limit.val * 2, config.numCandidates.val),
             }
         },
         {$addFields: {"vs_score": {$meta: "vectorSearchScore"}}},
@@ -113,7 +77,7 @@ async function search(query,queryVector,schema,config) {
                 coll: '',
                 pipeline: [
                     searchStage(query,schema),
-                    {$limit: config.k.val * 2},
+                    {$limit: Math.min(config.limit.val * 2, config.numCandidates.val)},
                     {$addFields: {fts_score: {$meta: "searchScore"}}},
                     {
                         $project: {
@@ -157,7 +121,7 @@ async function search(query,queryVector,schema,config) {
             }
         },
         {$sort: {"score": -1}},
-        {$limit: config.k.val}
+        {$limit: config.limit.val}
     ]
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,

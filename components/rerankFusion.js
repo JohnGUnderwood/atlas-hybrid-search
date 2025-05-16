@@ -13,26 +13,16 @@ function RerankFusion({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {      
-      k : {val:10,range:[1,25],step:1,comment:"Number of user facing results"},
-      request_text_results : {val:20,range:[1,50],step:1,comment:"Number of text search results"},
-      request_vector_results : {val:20,range:[1,50],step:1,comment:"Number of vector search results"},
-      vector_num_candidates : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"}
+      textLimit : {val:20,range:[1,50],step:1,comment:"Number of text search results"},
+      limit : {val:20,range:[1,50],step:1,comment:"Number of vector search results"},
+      show : {val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
+      numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
 
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
         setConfig(defaultConfig);
     }
-
-    const handleSliderChange = (param, newValue) => {
-        setConfig({
-            ...config,
-            [param]: {
-                ...config[param],
-                val:parseFloat(newValue)
-            }
-            });
-      };
 
     useEffect(() => {
         if(queryVector){
@@ -52,8 +42,8 @@ function RerankFusion({query,queryVector}){
 
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-          <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Rerank Fusion Params"/>
-          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.request_text_results.val} Vector Search: ${config.request_vector_results.val}`} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
+          <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Rerank Fusion Params"/>
+          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.textLimit.val} Vector Search: ${config.limit.val}`} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
       </div>
     )
 }
@@ -68,8 +58,8 @@ async function search(query,queryVector,schema,config) {
             index: '',
             path: `${schema.vectorField}`,
             queryVector: queryVector,
-            numCandidates: config.vector_num_candidates.val * config.request_vector_results.val,
-            limit: config.request_vector_results.val
+            numCandidates: config.numCandidates.val,
+            limit: config.limit.val
           }
         },       
         {
@@ -95,7 +85,7 @@ async function search(query,queryVector,schema,config) {
             pipeline: [
               searchStage(query,schema),
               {
-                $limit: config.request_text_results.val
+                $limit: config.textLimit.val
               },              
               {
                 $addFields: {
@@ -163,7 +153,7 @@ async function search(query,queryVector,schema,config) {
         })
         .then(rerankResponse => {
             // trim array to k results            
-            resolve({results: rerankResponse.data.slice(0,config.k.val), query: pipeline, time: 0});
+            resolve({results: rerankResponse.data.slice(0,config.show.val), query: pipeline, time: 0});
         })
         .catch((error) => {
             reject(error.response?.data?.error || error.message);
