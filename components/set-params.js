@@ -2,7 +2,49 @@ import { Label } from '@leafygreen-ui/typography';
 import Button from '@leafygreen-ui/button';
 import LoadingIndicator from "./LoadingIndicator";
 
-function SetParams({loading,config,heading,resetConfig,handleSliderChange}){
+function SetParams({loading,config,heading,resetConfig,setConfig}){
+    const handleSliderChange = (param, newValue) => {
+        let updatedConfig = {
+          ...config,
+          [param]: {
+              ...config[param],
+              val: parseFloat(newValue)
+          }
+        };
+  
+        // Ensure numCandidates >= limit
+        if (param === "limit" && parseFloat(newValue) > config.numCandidates.val) {
+            updatedConfig.numCandidates = {
+                ...config.numCandidates,
+                val: parseFloat(newValue)
+            };
+        }else if (param === "numCandidates" && parseFloat(newValue) < config.limit.val) {
+            updatedConfig.limit = {
+                ...config.limit,
+                val: parseFloat(newValue)
+            };
+        }else if(param == "fts_scalar"){
+            updatedConfig.fts_scalar = {
+                ...config.fts_scalar,
+                val:parseFloat(newValue)
+            }
+            updatedConfig.vector_scalar = {
+                ...config.vector_scalar,
+                val: parseFloat(1-newValue)
+            }
+        }else if(param == "vector_scalar"){
+            updatedConfig.vector_scalar = {
+                ...config.vector_scalar,
+                val:parseFloat(newValue)
+            }
+            updatedConfig.fts_scalar = {
+                ...config.fts_scalar,
+                val: parseFloat(1-newValue)
+            }
+        }
+  
+        setConfig(updatedConfig);
+    };
     return (
         <div>
             <h2>{heading}</h2>

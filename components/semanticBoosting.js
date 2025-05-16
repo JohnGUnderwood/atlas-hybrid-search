@@ -16,41 +16,30 @@ function SemanticBoosting({query,queryVector}){
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         vector_results : {val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
-        k : {val:10,range:[1,25],step:1,comment:"Number of final results"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"},
+        limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
+        numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
         vector_weight : {val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
         vector_score_cutoff : {val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const [scalar, setScalar] = useState(1);
-    const [numCandidates, setNumCandidates] = useState(Math.min(defaultConfig.k.val * defaultConfig.overrequest_factor.val,10000));
+    const [numCandidates, setNumCandidates] = useState(Math.min(defaultConfig.numCandidates.val,10000));
     const resetConfig = () => {
         setConfig(defaultConfig);
         setScalar(1);
     }
-
-    const handleSliderChange = (param, newValue) => {
-        setConfig(prevConfig => ({
-            ...prevConfig,
-            [param]: {
-                ...config[param],
-                val:parseFloat(newValue)
-            }
-            }));
-      };
     
-
     const handleScalarChange = (value) => {
         value = parseFloat(value);
         setScalar(value);
         const vector_results = value*10;
-        const overrequest_factor = defaultConfig.overrequest_factor.val*vector_results;
+        const numCandidates = defaultConfig.numCandidates.val*vector_results;
         const vector_weight = value;
         const vector_score_cutoff = (1-value/10);
         setConfig(prevConfig =>({
             ...prevConfig,
             vector_results: {...prevConfig.vector_results,val:vector_results},
-            overrequest_factor: {...prevConfig.overrequest_factor,val:overrequest_factor},
+            numCandidates: {...prevConfig.numCandidates,val:numCandidates},
             vector_weight: {...prevConfig.vector_weight,val:vector_weight},
             vector_score_cutoff: {...prevConfig.vector_score_cutoff,val:vector_score_cutoff}
         }));
@@ -69,13 +58,13 @@ function SemanticBoosting({query,queryVector}){
               console.log(error);
             });
         }
-        setNumCandidates(Math.min(config.k.val * config.overrequest_factor.val,10000));
+        setNumCandidates(Math.min(config.numCandidates.val,10000));
     
     },[queryVector,config]);
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Semantic Boosting Params"/>
+            <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Semantic Boosting Params"/>
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
@@ -133,7 +122,7 @@ async function search(query,queryVector,schema,config,numCandidates) {
         const lexical_pipeline = [
             searchStage(query,schema),
             project,
-            {$limit: config.k.val}
+            {$limit: config.limit.val}
         ];
         var response = await axios.post(`api/search`,
             { 

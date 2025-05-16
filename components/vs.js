@@ -12,23 +12,13 @@ function VS({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        k : {val:10,range:[1,25],step:1,comment:"Number of results"},
-        overrequest_factor : {val:10,range:[1,25],step:1,comment:"Multiply 'k' for numCandidates"}
+        limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
+        numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
         setConfig(defaultConfig);
     }
-
-    const handleSliderChange = (param, newValue) => {
-        setConfig({
-            ...config,
-            [param]: {
-                ...config[param],
-                val:parseFloat(newValue)
-            }
-            });
-      };
 
     useEffect(() => {
         if(queryVector){
@@ -48,8 +38,8 @@ function VS({query,queryVector}){
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams loading={loading} config={config} resetConfig={resetConfig} handleSliderChange={handleSliderChange} heading="Vector Search Params"/>
-            <Results queryText={query} response={response} msg={"numCandidates: "+(config.k.val * config.overrequest_factor.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+            <Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
     )
 }
@@ -63,8 +53,8 @@ async function search(queryVector,schema,config) {
                 index: '',
                 path: `${schema.vectorField}`,
                 queryVector: queryVector,
-                numCandidates: config.k.val * config.overrequest_factor.val,
-                limit: config.k.val
+                numCandidates: config.numCandidates.val,
+                limit: config.limit.val
             }
         },
         {
