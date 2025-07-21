@@ -33,12 +33,14 @@ router.get(async (req, res) => {
                 collection.updateOne(
                     {_id:_id},
                     {$setOnInsert: {
-                        _id:_id,
-                        query:string,
-                        embedding:response,
-                        provider:provider,
-                        model:model,
-                        dimensions:dimensions
+                            _id:_id,
+                            query:string,
+                            embedding:response,
+                            provider:provider,
+                            model:model,
+                            dimensions:dimensions,
+                            lastAccessed: new Date(),
+                            count:1
                         }
                     },
                     {upsert:true}
