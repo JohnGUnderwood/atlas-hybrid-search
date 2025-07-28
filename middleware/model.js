@@ -23,6 +23,9 @@ async function initializeModel(){
         }else if(embeddingProvider == "voyageai"){
             model = new Models.voyageai(process.env.EMBEDDING_APIKEY);
             console.log("Using Voyage AI embeddings");
+        }else if(embeddingProvider == "ollama"){
+            model = new Models.ollama();
+            console.log("Using Ollama embeddings");
         }
 
         const rerankProvider = process.env.RERANK_PROVIDER;
