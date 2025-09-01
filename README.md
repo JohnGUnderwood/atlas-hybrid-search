@@ -35,7 +35,7 @@ In the app the API call to embed the query is made only when the 'vector search'
 Go to the route of the project (where the `package.json` file is) and run:
 
 ```
-npm install
+npm install --legacy-peer-deps
 ```
 
 ## Load MongoDB Sample Data (optional)

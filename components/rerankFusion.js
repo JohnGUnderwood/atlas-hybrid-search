@@ -13,10 +13,10 @@ function RerankFusion({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {      
-      textLimit : {val:20,range:[1,50],step:1,comment:"Number of text search results"},
-      limit : {val:20,range:[1,50],step:1,comment:"Number of vector search results"},
-      show : {val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
-      numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+      textLimit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of text search results"},
+      limit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of vector search results"},
+      show : {type:"range",val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
+      numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
 
     const [config, setConfig] = useState(defaultConfig)

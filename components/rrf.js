@@ -14,10 +14,10 @@ function RRF({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-      vector_weight : {val:1,range:[0,20],step:1,comment:"Weight the vector results"},
-      fts_weight : {val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
-      limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
-      numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+      vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
+      fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
+      limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+      numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {

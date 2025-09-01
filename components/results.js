@@ -132,6 +132,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                 </div>
                 <Modal open={open} setOpen={setOpen}>
                     <Subtitle>MongoDB Aggregation Pipeline</Subtitle>
+                    <p>(press 'ESC' to close)</p>
                     <Code language={'javascript'}>
                         {query ? JSON.stringify(filterQueryVectors(query),null,2) : "" }
                     </Code>

@@ -134,7 +134,7 @@ const Home = () => {
         <RerankFusion query={query} queryVector={queryVector}/>
       </Tab>
     </Tabs>
-    <Modal open={open} setOpen={setOpen}>
+    <Modal open={open !== false} setOpen={setOpen}>
       { open == "indexes" ?
         <>
         <ExpandableCard

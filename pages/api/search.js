@@ -19,10 +19,18 @@ function setVariables(pipeline){
             }else if('$unionWith' in stage){
                 newPipeline.push({...stage,$unionWith:{...stage.$unionWith,coll:searchCollection,pipeline:setVariables(stage.$unionWith.pipeline)}})
             }else if('$rankFusion' in stage){
-                stage['$rankFusion'].input.pipelines.vectorPipeline = setVariables(stage['$rankFusion'].input.pipelines.vectorPipeline);
-                stage['$rankFusion'].input.pipelines.fullTextPipeline = setVariables(stage['$rankFusion'].input.pipelines.fullTextPipeline);
+                Object.entries(stage['$rankFusion'].input.pipelines).forEach(([name, pipeline]) =>{
+                    stage['$rankFusion'].input.pipelines[name] = setVariables(pipeline);
+                })
+                // stage['$rankFusion'].input.pipelines.vectorPipeline = setVariables(stage['$rankFusion'].input.pipelines.vectorPipeline);
+                // stage['$rankFusion'].input.pipelines.fullTextPipeline = setVariables(stage['$rankFusion'].input.pipelines.fullTextPipeline);
                 newPipeline.push(stage);
-            }else{
+            }else if('$scoreFusion' in stage){
+                Object.entries(stage['$scoreFusion'].input.pipelines).forEach(([name, pipeline]) =>{
+                    pipeline = setVariables(pipeline);
+                })
+            }
+            else{
                 newPipeline.push(stage);
             }
         });
