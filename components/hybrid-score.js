@@ -33,7 +33,7 @@ function HybridScore({result,method,weights}) {
 
     return (
         <div style={{paddingTop:"5px"}}>
-            <em style={{fontSize:"smaller"}}>Scoring for this result: {`${(result.fts_score || 0).toFixed(3)} + ${(result.vs_score || 0).toFixed(3)} = ${(result.score || 0).toFixed(3)}`}</em>
+            <em style={{fontSize:"smaller"}}>Scoring for this result: {`${fts_contribution.toFixed(3)} + ${vector_contribution.toFixed(3)} = ${result.score.toFixed(3)}`}</em>
             <div key={`${result._id}scores`} style={{display:"grid",gridTemplateColumns:"45px 4lvh 50% 4lvh 45px",gap:"5px",alignItems:"start"}}>
                 <div style={{color:palette.blue.light1, fontSize:"smaller"}}>Lexical</div>
                 <span style={{color:palette.blue.light1, fontSize:"smaller"}}>{`${Math.round((fts_contribution/result.score)*100)}%`}</span>
