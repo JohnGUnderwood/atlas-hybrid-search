@@ -122,14 +122,14 @@ async function search(query,queryVector,config,schema) {
         $addFields: {
           vs_score: {
             $cond: [
-              { $and:[{$ifNull: ["$vs_score_details", false] },{$ne: ["$vs_score_details.rank", 0]}] },
+              { $and:[{$ifNull: ["$vs_score_details", false] },{$ne: ["$vs_score_details.rank", "NA"]}] },
               { $multiply: ["$vs_score_details.weight",{$divide:[1,{$add:[60,"$vs_score_details.rank"]}]}] },
               0
             ]
           },
           fts_score: {
             $cond: [
-              { $and:[{$ifNull: ["$fts_score_details", false] },{$ne: ["$fts_score_details.rank", 0]}] },
+              { $and:[{$ifNull: ["$fts_score_details", false] },{$ne: ["$fts_score_details.rank", "NA"]}] },
               { $multiply: ["$fts_score_details.weight",{$divide:[1,{$add:[60,"$fts_score_details.rank"]}]}] },
               0
             ]

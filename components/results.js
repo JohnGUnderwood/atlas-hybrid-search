@@ -115,7 +115,13 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                                                 
                                             ))}
                                             {hybrid ?
-                                                <HybridScore result={r} key={`${r._id}scores`}/>
+                                                <HybridScore result={r}
+                                                    method={response.config?.combination_method ? response.config.combination_method.val : null}
+                                                    weights={{
+                                                        vector: response.config?.vector_weight.val,
+                                                        fts: response.config?.fts_weight.val
+                                                    }}
+                                                    key={`${r._id}scores`}/>
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                             {r.boost? <Banner style={{margin:"10px"}} variant="warning" image={<Bulb/>}>Semantically Boosted Result</Banner> : <></>}

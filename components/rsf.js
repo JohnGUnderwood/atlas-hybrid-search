@@ -52,26 +52,32 @@ function RSF({query,queryVector}){
 export default RSF;
 
 async function search(query,queryVector,schema,config) {
-    combination = {
-        weights:{
+    var combination = {};
+    // Build the combination object based on the selected method
+    if(config.combination_method.val === "avg"){
+        combination.method = "avg";
+        combination.weights = {
             vectorPipeline: config.vector_weight.val,
             fullTextPipeline: config.fts_weight.val
         }
-    }
-
-    if(config.combination_method.val === "avg"){
-        combination.method = "avg";
     }else{
         combination.method = "expression";
-        if(config.combination_expression.val === "sum"){
+        if(config.combination_method.val === "sum"){
             combination.expression = {
-                $sum:["$$vectorPipeline","$$fullTextPipeline"]
+                $sum:[
+                    {$multiply:["$$vectorPipeline",config.vector_weight.val]},
+                    {$multiply:["$$fullTextPipeline",config.fts_weight.val]}
+                ]
             }
-        }else if(config.combination_expression.val === "max"){
+        }else if(config.combination_method.val === "max"){
             combination.expression = {
-                $max:["$$vectorPipeline","$$fullTextPipeline"]
+                $max:[
+                    {$multiply:["$$vectorPipeline",config.vector_weight.val]},
+                    {$multiply:["$$fullTextPipeline",config.fts_weight.val]}
+                ]
             }
         }
+
     }
 
     const pipeline = [
@@ -103,80 +109,59 @@ async function search(query,queryVector,schema,config) {
         },
         {
             $addFields:{
-            scoreDetails:{ $meta: "scoreDetails" }
+                scoreDetails:{ $meta: "scoreDetails" }
             }
-        }
+        },
+        {
+            $addFields: {
+                vs_score_details: {
+                    $arrayElemAt: [
+                    {
+                        $filter: {
+                            input: "$scoreDetails.details",
+                            as: "item",
+                            cond: { $eq: ["$$item.inputPipelineName", "vectorPipeline"] }
+                        }
+                    },
+                    0
+                    ]
+                },
+                fts_score_details: {
+                    $arrayElemAt: [
+                    {
+                        $filter: {
+                            input: "$scoreDetails.details",
+                            as: "item",
+                            cond: { $eq: ["$$item.inputPipelineName", "fullTextPipeline"] }
+                        }
+                    },
+                    0
+                    ]
+                },
+                score:"$scoreDetails.value"
+            }
+        },
+        {
+            $project: {
+                _id:1,
+                vs_score:"$vs_score_details.value",
+                fts_score:"$fts_score_details.value",
+                score:1,
+                scoreDetails:1,
+                title:`$${schema.titleField}`,
+                image:`$${schema.imageField}`,
+                description:`$${schema.descriptionField}`,
+                ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
+            }
+        },
     ]
 
-    // const pipeline = [
-    //     ,
-    //     {$addFields: {"vs_score": {$meta: "vectorSearchScore"}}},
-    //     {
-    //         $project:{
-    //             title:`$${schema.titleField}`,
-    //             image:`$${schema.imageField}`,
-    //             description:`$${schema.descriptionField}`,
-    //             ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {}),
-    //             vs_score: {$multiply:[config.vector_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$vs_score"]}}]}]}]},//Sigmoid function: 1/(1+exp(-x))
-    //         }
-    //     },
-    //     {
-    //         $unionWith: {
-    //             coll: '',
-    //             pipeline: [
-    //                 searchStage(query,schema),
-    //                 {$limit: Math.min(config.limit.val * 2, config.numCandidates.val)},
-    //                 {$addFields: {fts_score: {$meta: "searchScore"}}},
-    //                 {
-    //                     $project: {
-    //                         fts_score: {$multiply:[config.fts_scalar.val,{$divide: [1,{$sum:[1,{$exp:{$multiply:[-1,"$fts_score"]}}]}]}]},//Using sigmoid function: 1/(1+exp(-x))
-    //                         title:`$${schema.titleField}`,
-    //                         image:`$${schema.imageField}`,
-    //                         description:`$${schema.descriptionField}`,
-    //                         ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-    //                     }
-    //                 },
-    //             ],
-    //         }
-    //     },
-    //     {
-    //         $group: {
-    //             _id: "$_id",
-    //             vs_score: {$max: "$vs_score"},
-    //             fts_score: {$max: "$fts_score"},
-    //             title:{$first:"$title"},
-    //             image:{$first:"$image"},
-    //             description:{$first:"$description"},
-    //             ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: {$first:`$${f}`}}), {})
-    //         }
-    //     },
-    //     {
-    //         $project: {
-    //             _id: 1,
-    //             title:1,
-    //             image:1,
-    //             description:1,
-    //             vs_score: {$ifNull: ["$vs_score", 0]},
-    //             fts_score: {$ifNull: ["$fts_score", 0]},
-    //             ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-    //         }
-    //     },
-    //     {
-    //         $addFields:{
-    //             score: {
-    //                 $add: ["$fts_score", "$vs_score"],
-    //             },
-    //         }
-    //     },
-    //     {$sort: {"score": -1}},
-    //     {$limit: config.limit.val}
-    // ]
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-            pipeline : pipeline
+                pipeline : pipeline
             },
-        ).then(response => resolve(response))
+        ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {
             reject(error.response.data.error);
         })

@@ -22,13 +22,12 @@ function setVariables(pipeline){
                 Object.entries(stage['$rankFusion'].input.pipelines).forEach(([name, pipeline]) =>{
                     stage['$rankFusion'].input.pipelines[name] = setVariables(pipeline);
                 })
-                // stage['$rankFusion'].input.pipelines.vectorPipeline = setVariables(stage['$rankFusion'].input.pipelines.vectorPipeline);
-                // stage['$rankFusion'].input.pipelines.fullTextPipeline = setVariables(stage['$rankFusion'].input.pipelines.fullTextPipeline);
                 newPipeline.push(stage);
             }else if('$scoreFusion' in stage){
                 Object.entries(stage['$scoreFusion'].input.pipelines).forEach(([name, pipeline]) =>{
-                    pipeline = setVariables(pipeline);
+                    stage['$scoreFusion'].input.pipelines[name] = setVariables(pipeline);
                 })
+                newPipeline.push(stage);
             }
             else{
                 newPipeline.push(stage);
@@ -43,6 +42,7 @@ function setVariables(pipeline){
 async function getResults(collection,pipeline){
     try{
         const newPipeline = setVariables(pipeline);
+        // console.log(JSON.stringify(newPipeline,null,2));
         const start = new Date();
         const results = await collection.aggregate(newPipeline).toArray();
         const end   = new Date();

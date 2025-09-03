@@ -30,7 +30,7 @@ function SetParams({loading,config,heading,resetConfig,setConfig}){
     };
 
     const handleMultiChange = (param, value) => {
-        const updatedConfig = {
+        let updatedConfig = {
             ...config,
             [param]: {
                 ...config[param],
