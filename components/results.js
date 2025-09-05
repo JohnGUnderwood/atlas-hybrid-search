@@ -116,7 +116,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                                             ))}
                                             {hybrid ?
                                                 <HybridScore result={r}
-                                                    method={response.config?.combination_method ? response.config.combination_method.val : null}
+                                                    method={response.config?.combination_method.val}
                                                     weights={{
                                                         vector: response.config?.vector_weight.val,
                                                         fts: response.config?.fts_weight.val

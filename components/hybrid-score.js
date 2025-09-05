@@ -1,28 +1,35 @@
 import { palette } from '@leafygreen-ui/palette';
 
-function HybridScore({result,method=null,weights=null}) {
+function HybridScore({result,method,weights}) {
 
-    var fts_contribution = result.fts_score;
-    var vector_contribution = result.vs_score;
-        
-    if(method == "avg"){
-        fts_contribution = fts_contribution/2;
-        vector_contribution = vector_contribution/2;
-    }else if(method == "max"){
-        fts_contribution = fts_contribution > vector_contribution ? result.score : 0;
-        vector_contribution = vector_contribution > fts_contribution ? result.score : 0;
-    }else if(method == "sum"){
-        if(weights && weights.vector && weights.fts){
-            fts_contribution *= weights.fts;
-            vector_contribution *= weights.vector;
+    var fts_details = result.scoreDetails.details.filter(item => item.inputPipelineName === "fullTextPipeline")[0];
+    var vector_details = result.scoreDetails.details.filter(item => item.inputPipelineName === "vectorPipeline")[0];
+    var fts_contribution;
+    var vector_contribution;
+
+    if(method == "rank"){
+        fts_contribution = fts_details.rank > 0 ? weights.fts * (1/(fts_details.rank+60)) : 0;
+        vector_contribution = vector_details.rank > 0 ? weights.vector * (1/(vector_details.rank+60)) : 0;
+    }else {
+        [fts_details,vector_details].forEach(d => {
+            // if the value is not a number default to 0
+            if(typeof d.value !== "number"){
+                d.value = 0;
+            }
+        });
+        if(method == "avg"){
+            fts_contribution = fts_details.value/2;
+            vector_contribution = vector_details.value/2;
+        }else if(method == "max"){
+            fts_contribution = fts_details.value > vector_details.value ? result.score : 0;
+            vector_contribution = vector_details.value > fts_details.value ? result.score : 0;
+        }else if(method == "sum"){
+            if(weights && weights.vector && weights.fts){
+                fts_contribution = weights.fts * fts_details.value;
+                vector_contribution = weights.vector * vector_details.value;
+            }
         }
     }
-    else if(method == null){
-        fts_contribution = result.fts_score;
-        vector_contribution = result.vs_score;
-    }
-    
-    
 
     return (
         <div style={{paddingTop:"5px"}}>

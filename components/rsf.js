@@ -113,40 +113,9 @@ async function search(query,queryVector,schema,config) {
             }
         },
         {
-            $addFields: {
-                vs_score_details: {
-                    $arrayElemAt: [
-                    {
-                        $filter: {
-                            input: "$scoreDetails.details",
-                            as: "item",
-                            cond: { $eq: ["$$item.inputPipelineName", "vectorPipeline"] }
-                        }
-                    },
-                    0
-                    ]
-                },
-                fts_score_details: {
-                    $arrayElemAt: [
-                    {
-                        $filter: {
-                            input: "$scoreDetails.details",
-                            as: "item",
-                            cond: { $eq: ["$$item.inputPipelineName", "fullTextPipeline"] }
-                        }
-                    },
-                    0
-                    ]
-                },
-                score:"$scoreDetails.value"
-            }
-        },
-        {
             $project: {
                 _id:1,
-                vs_score:"$vs_score_details.value",
-                fts_score:"$fts_score_details.value",
-                score:1,
+                score:"$scoreDetails.value",
                 scoreDetails:1,
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,

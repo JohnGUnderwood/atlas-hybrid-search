@@ -14,6 +14,7 @@ function RRF({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
+      combination_method : {type:"hidden",val:"rank"},
       vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
       fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
       limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
@@ -90,58 +91,9 @@ async function search(query,queryVector,config,schema) {
         }
       },
       {
-        $addFields: {
-          vs_score_details: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$scoreDetails.details",
-                  as: "item",
-                  cond: { $eq: ["$$item.inputPipelineName", "vectorPipeline"] }
-                }
-              },
-              0
-            ]
-          },
-          fts_score_details: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$scoreDetails.details",
-                  as: "item",
-                  cond: { $eq: ["$$item.inputPipelineName", "fullTextPipeline"] }
-                }
-              },
-              0
-            ]
-          },
-          score:"$scoreDetails.value"
-        }
-      },
-      {
-        $addFields: {
-          vs_score: {
-            $cond: [
-              { $and:[{$ifNull: ["$vs_score_details", false] },{$ne: ["$vs_score_details.rank", "NA"]}] },
-              { $multiply: ["$vs_score_details.weight",{$divide:[1,{$add:[60,"$vs_score_details.rank"]}]}] },
-              0
-            ]
-          },
-          fts_score: {
-            $cond: [
-              { $and:[{$ifNull: ["$fts_score_details", false] },{$ne: ["$fts_score_details.rank", "NA"]}] },
-              { $multiply: ["$fts_score_details.weight",{$divide:[1,{$add:[60,"$fts_score_details.rank"]}]}] },
-              0
-            ]
-          }
-        }
-      },
-      {
         $project: {
             _id:1,
-            vs_score:1,
-            fts_score:1,
-            score:1,
+            score:"$scoreDetails.value",
             scoreDetails:1,
             title:`$${schema.titleField}`,
             image:`$${schema.imageField}`,
@@ -155,7 +107,7 @@ async function search(query,queryVector,config,schema) {
             { 
               pipeline:pipeline
             },
-        ).then(response => resolve(response))
+        ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {
             reject(error.response.data.error);
         })

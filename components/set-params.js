@@ -44,7 +44,7 @@ function SetParams({loading,config,heading,resetConfig,setConfig}){
         <div>
             <h2>{heading}</h2>
             <div style={{maxWidth:"60px"}}><Button onClick={()=>resetConfig()} variant="primary">Reset</Button></div>
-            {Object.keys(config).map(param=>{
+            {Object.keys(config).filter(param => config[param].type !== "hidden").map(param=>{
                 try{
                     return (
                         <div key={param}>
