@@ -12,7 +12,8 @@ function RerankFusion({query,queryVector}){
     const [loading, setLoading] = useState(false);
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
-    const defaultConfig = {      
+    const defaultConfig = {    
+      combination_method : {type:"hidden",val:"rerank"},  
       textLimit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of text search results"},
       limit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of vector search results"},
       show : {type:"range",val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
@@ -43,7 +44,7 @@ function RerankFusion({query,queryVector}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Rerank Fusion Params"/>
-          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.textLimit.val} Vector Search: ${config.limit.val}`} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
+          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.textLimit.val} Vector Search: ${config.limit.val}`} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
       </div>
     )
 }
@@ -61,17 +62,9 @@ async function search(query,queryVector,schema,config) {
             numCandidates: config.numCandidates.val,
             limit: config.limit.val
           }
-        },       
-        {
-          $addFields: {
-            vs_score: {
-              $meta: 'vectorSearchScore'
-            }
-          }
         },
         {
           $project: {
-            vs_score: 1, 
             _id: 1, 
             title: `$${schema.titleField}`,
             image: `$${schema.imageField}`,
@@ -86,17 +79,9 @@ async function search(query,queryVector,schema,config) {
               searchStage(query,schema),
               {
                 $limit: config.textLimit.val
-              },              
-              {
-                $addFields: {
-                  fts_score: {
-                    $meta: 'searchScore'
-                  }
-                }
               },
               {
                 $project: {
-                    fts_score: 1,
                     _id: 1,
                     title: `$${schema.titleField}`,
                     image: `$${schema.imageField}`,
@@ -110,8 +95,6 @@ async function search(query,queryVector,schema,config) {
         {
           $group: {
             _id: "$_id",
-            vs_score: {$max: "$vs_score"},
-            fts_score: {$max: "$fts_score"},
             title:{$first:"$title"},
             image:{$first:"$image"},
             description:{$first:"$description"},
@@ -124,16 +107,7 @@ async function search(query,queryVector,schema,config) {
             title: 1,
             image:1,
             description:1,
-            vs_score: {$ifNull: ["$vs_score", 0]},
-            fts_score: {$ifNull: ["$fts_score", 0]},
             ...schema.searchFields.reduce((acc, f) => ({...acc, [f]: `$${f}`}), {})
-          }
-        },
-        {
-          $addFields:{
-              score: {
-                  $add: ["$fts_score", "$vs_score"],
-              },
           }
         },
     ]
@@ -144,16 +118,26 @@ async function search(query,queryVector,schema,config) {
               pipeline : pipeline
             },
         ).then(response => {
-            console.log(response.data);
-            return axios.post(`api/rerank`, 
-                {
-                    query: query,
-                    documents: response.data.results,
-                });
+            return axios.post(`api/rerank`, {
+                query: query,
+                documents: response.data.results,
+            }).then(rerankResponse => ({
+              response,
+              rerankResponse
+            }));;
         })
-        .then(rerankResponse => {
-            // trim array to k results            
-            resolve({results: rerankResponse.data.slice(0,config.show.val), query: pipeline, time: 0});
+        .then(({response, rerankResponse}) => {
+            // trim array to k results
+            var results = rerankResponse.data.results.slice(0,config.show.val);
+            // use re-rank score as score and remove re-rank flag for UI purposes
+            results = results.map((doc) => ({...doc, score: doc.rerank_score, reranked: undefined}));
+            // Add both times together
+            resolve({
+                results: results,
+                query: pipeline,
+                time: response.data.time + rerankResponse.data.time,
+                config: config
+            });
         })
         .catch((error) => {
             reject(error.response?.data?.error || error.message);

@@ -9,8 +9,11 @@ router.post(async (req, res) => {
         res.status(400).send(`Request body must have 'query' and 'documents'`);
     }else{
         try{
+            const start = new Date();
             const newResults = await req.rerank_model.rerank(req.body.query,req.body.documents);
-            res.status(200).json(newResults);
+            const end = new Date();
+            const time = end - start;
+            res.status(200).json({results:newResults, time:time});
         }catch(error){
             console.log(error);
             res.status(405).json(error);
