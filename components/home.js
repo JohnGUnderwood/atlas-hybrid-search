@@ -99,6 +99,8 @@ const Home = () => {
         <div style={{margin:"100px",marginTop:"50px"}}>
           <h1>About this application</h1>
           <p>This app helps you to test different strategies for combining lexical and vector search. You can find source code here: <a href="https://github.com/JohnGUnderwood/atlas-hybrid-search">https://github.com/JohnGUnderwood/atlas-hybrid-search</a></p>
+          <h2>How to use</h2>
+          <p>Use the Fulltext and Vector search tabs to test your query using just one or other approaches. Then use the other tabs to see how your query performs with different strategies. Have fun!</p>
           <h2>Hybrid strategies</h2>
           <p>There are four strategies in the app at the moment; Relative Score Fusion, Reciprocal Rank Fusion, Semantic Boosting and Rank Fusion</p>
           <h3>Relative Score Fusion (RSF)</h3>
@@ -112,8 +114,10 @@ const Home = () => {
           <h2>Reranking</h2>
           <h3>Rerank Results</h3>
           <p>When the application is run with a reranking model you can select to rerank the returned results from any of the retrieval strategies. This will send the result documents and query to the configued reranking model, which returns a new resorted result set.</p>
-          <h2>How to use</h2>
-          <p>Use the Fulltext and Vector search tabs to test your query using just one or other approaches. Then use the other tabs to see how your query performs with different strategies. Have fun!</p>
+          <h3>Steering with Feedback</h3>
+          <p>Steering with feedback allows you to provide positive and negative feedback on the results returned by the search. This feedback is then used to adjust the search parameters and improve the results.</p>
+          <p>To use steering with feedback, simply click on the thumbs up or thumbs down icons next to each result. This will provide feedback to the system, which will be used to adjust the search parameters for future queries.</p>
+          <p>Multiple steering methods can be selected. A 'late' method which runs a vector search for each positive and negative example and uses $scoreFusion to combine the results with the main query. Two 'early' methods which modify the query vector itself using either Linear Combination or Centroid Fusion.</p>
         </div>
       </Tab>
       <Tab name="Fulltext Search">
@@ -134,7 +138,7 @@ const Home = () => {
       <Tab name="Rerank Fusion">
         <RerankFusion query={query} queryVector={queryVector}/>
       </Tab>
-      <Tab name="Steering">
+      <Tab name="Steering with Feedback">
         <Steering query={query} queryVector={queryVector}/>
       </Tab>
     </Tabs>
