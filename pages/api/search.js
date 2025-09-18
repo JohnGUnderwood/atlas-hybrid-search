@@ -7,7 +7,7 @@ const searchCollection = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_e
 const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
 const vectorIndex = process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex";
 
-function setVariables(pipeline){
+function setIndexNames(pipeline){
     // This function sets search/vector index names and collection names in the pipeline.    
     try{
         var newPipeline = [];
@@ -17,15 +17,15 @@ function setVariables(pipeline){
             }else if('$vectorSearch' in stage){
                 newPipeline.push({...stage,$vectorSearch:{...stage.$vectorSearch, index:vectorIndex}})
             }else if('$unionWith' in stage){
-                newPipeline.push({...stage,$unionWith:{...stage.$unionWith,coll:searchCollection,pipeline:setVariables(stage.$unionWith.pipeline)}})
+                newPipeline.push({...stage,$unionWith:{...stage.$unionWith,coll:searchCollection,pipeline:setIndexNames(stage.$unionWith.pipeline)}})
             }else if('$rankFusion' in stage){
                 Object.entries(stage['$rankFusion'].input.pipelines).forEach(([name, pipeline]) =>{
-                    stage['$rankFusion'].input.pipelines[name] = setVariables(pipeline);
+                    stage['$rankFusion'].input.pipelines[name] = setIndexNames(pipeline);
                 })
                 newPipeline.push(stage);
             }else if('$scoreFusion' in stage){
                 Object.entries(stage['$scoreFusion'].input.pipelines).forEach(([name, pipeline]) =>{
-                    stage['$scoreFusion'].input.pipelines[name] = setVariables(pipeline);
+                    stage['$scoreFusion'].input.pipelines[name] = setIndexNames(pipeline);
                 })
                 newPipeline.push(stage);
             }
@@ -41,7 +41,7 @@ function setVariables(pipeline){
 
 async function getResults(collection,pipeline){
     try{
-        const newPipeline = setVariables(pipeline);
+        const newPipeline = setIndexNames(pipeline);
         // console.log(JSON.stringify(newPipeline,null,2));
         const start = new Date();
         const results = await collection.aggregate(newPipeline).toArray();

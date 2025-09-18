@@ -6,6 +6,7 @@ import FTS from './fts';
 import VS from './vs';
 import RerankFusion from './rerankFusion';
 import SemanticBoosting from './semanticBoosting';
+import Steering from './steering';
 import {SearchInput} from '@leafygreen-ui/search-input';
 import { useState, } from 'react';
 import Button from '@leafygreen-ui/button';
@@ -132,6 +133,9 @@ const Home = () => {
       </Tab>
       <Tab name="Rerank Fusion">
         <RerankFusion query={query} queryVector={queryVector}/>
+      </Tab>
+      <Tab name="Steering">
+        <Steering query={query} queryVector={queryVector}/>
       </Tab>
     </Tabs>
     <Modal open={open !== false} setOpen={setOpen}>
