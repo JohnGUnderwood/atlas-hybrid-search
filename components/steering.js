@@ -5,6 +5,7 @@ import axios from "axios";
 // LeafyGreen
 import { Chip } from "@leafygreen-ui/chip";
 import { useToast } from '@leafygreen-ui/toast';
+import Button from '@leafygreen-ui/button';
 
 // App Components
 import Results from "./results"
@@ -23,7 +24,7 @@ function Steering({query,queryVector}){
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
         positiveWeight : {type:"range",val:1,range:[1,10],step:1,comment:"Weighting for positive feedback"},
         negativeWeight : {type:"range",val:1,range:[1,10],step:1,comment:"Weighting for negative feedback"},
-        fusionMethod : {type:"multi",val:"late score",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"},
+        fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -36,7 +37,6 @@ function Steering({query,queryVector}){
     const VoteList = () => {
         return (
             <>
-                {feedback.positive.length > 0 || feedback.negative.length > 0 ? <h3>Steering Feedback</h3> : null}
                 {feedback.positive.map(vote => (<Chip label={`${vote.label} (${vote.id})`} variant="green" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, positive: feedback.positive.filter(_v => _v.id !== vote.id)})}/>))}
                 {feedback.positive.length > 0 && feedback.negative.length > 0 ? <><br/><br/></> : null}
                 {feedback.negative.map(vote => (<Chip label={`${vote.label} (${vote.id})`} variant="red" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, negative: feedback.negative.filter(_v => _v.id !== vote.id)})}/>))}
@@ -44,34 +44,41 @@ function Steering({query,queryVector}){
         );
     }
 
-    useEffect(() => {
-        if(queryVector){
-            setLoading(true);
-            search(queryVector,schema,config,feedback)
-            .then(resp => {
-              setResponse(resp.data);
-              setLoading(false);
-            })
-            .catch(error => {
-              pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
-              console.log(error);
-            });
-        }
-    
-    },[queryVector,config]);
+    const handleSearch = () => {
+        setLoading(true);
+        search(queryVector,schema,config,feedback)
+        .then(resp => {
+          setResponse(resp.data);
+          setLoading(false);
+        })
+        .catch(error => {
+          pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
+          console.log(error);
+        });
+    }
 
     useEffect(() => {
-        // This will run whenever positive or negative changes
-        // For example, you could log or trigger an update here
-        console.log("Vote lists changed:", { feedback });
-    }, [feedback.positive, feedback.negative]);
+        if(queryVector){
+            handleSearch();
+        }
+    
+    },[queryVector,config,feedback.positive,feedback.negative]);
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => ['limit','numCandidates'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
                 <br/>
-                <VoteList feedback={feedback} setFeedback={setFeedback} />
+                {feedback.positive.length > 0 || feedback.negative.length > 0 ? 
+                    <>
+                        <h2>Steering Feedback</h2>
+                        <VoteList feedback={feedback} setFeedback={setFeedback} />
+                        <br/>
+                        <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => !['limit','numCandidates'].includes(k)))} setConfig={setConfig} heading=""/>
+                    </>
+                    : <></>
+                }
+                
             </div>
             <Results feedback={feedback} setFeedback={setFeedback} queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
         </div>
@@ -92,9 +99,7 @@ async function getSteeringVectors(feedback,schema){
 
 async function search(queryVector,schema,config,feedback) {
     const steering = await getSteeringVectors(feedback,schema);
-    console.log("Steering Vectors:",steering);
     let pipeline = [];
-
     // For late score fusion we build a single $scoreFusion stage with multiple pipelines
     if(!config.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
         pipeline.push({$vectorSearch: {

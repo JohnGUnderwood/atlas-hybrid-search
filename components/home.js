@@ -36,20 +36,17 @@ const Home = () => {
   }
 
   const handleSearch = () => {
-    console.log("Search Clicked!")
     if(query && query != ""){
       setLoading(true);
       getQueryCache(query)
       .then(resp => {
         if(resp){
-          console.log("Got cached query vector!");
           pushToast({timeout:10000,variant:"note",title:"Cache Hit",description:`Used cached embedding for ${query}`});
           setQueryVector(resp);
           setLoading(false);
         }else{
           embedQuery(query)
           .then(resp => {
-            console.log("Query Embedded!")
             setQueryVector(resp);
             setLoading(false);
           })
@@ -71,7 +68,6 @@ const Home = () => {
     getQueryCache(event.target.value)
     .then(resp => {
       if(resp){
-        console.log("Got cached query vector!");
         pushToast({timeout:10000,variant:"note",title:"Cache Hit",description:`Used cached embedding for ${event.target.value}`});
         setQueryVector(resp);
       }

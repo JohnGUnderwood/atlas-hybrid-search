@@ -3,7 +3,7 @@ import Button from '@leafygreen-ui/button';
 import LoadingIndicator from "./LoadingIndicator";
 import { Select, Option } from '@leafygreen-ui/select';
 
-function SetParams({loading,config,heading,resetConfig,setConfig}){
+function SetParams({loading,config,heading,resetConfig=null,setConfig}){
     const handleSliderChange = (param, newValue) => {
         let updatedConfig = {
           ...config,
@@ -26,7 +26,7 @@ function SetParams({loading,config,heading,resetConfig,setConfig}){
             };
         }
   
-        setConfig(updatedConfig);
+        setConfig(prev => ({...prev, ...updatedConfig}));
     };
 
     const handleMultiChange = (param, value) => {
@@ -37,13 +37,13 @@ function SetParams({loading,config,heading,resetConfig,setConfig}){
                 val: value
             }
         };
-        setConfig(updatedConfig);
+        setConfig(prev => ({...prev, ...updatedConfig}));
     };
 
     return (
         <div>
             <h2>{heading}</h2>
-            <div style={{maxWidth:"60px"}}><Button onClick={()=>resetConfig()} variant="primary">Reset</Button></div>
+            {resetConfig? <div style={{maxWidth:"60px"}}><Button onClick={()=>resetConfig()} variant="primary">Reset</Button></div>:<></>}
             {Object.keys(config).filter(param => config[param].type !== "hidden").map(param=>{
                 try{
                     return (
