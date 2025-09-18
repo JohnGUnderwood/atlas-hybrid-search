@@ -135,12 +135,6 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
         }
     },[response]);
 
-    useEffect(() => {
-        // This will run whenever positive or negative changes
-        // For example, you could log or trigger an update here
-        // console.log("Vote lists changed:", { positive, negative });
-    }, [feedback.positive, feedback.negative]);
-
     return (
         <div>
         {
