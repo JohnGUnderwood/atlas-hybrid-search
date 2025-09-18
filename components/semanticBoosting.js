@@ -15,11 +15,11 @@ function SemanticBoosting({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        vector_results : {val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
-        limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        vector_weight : {val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
-        vector_score_cutoff : {val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"}
+        vector_results : {type:"range",val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
+        limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+        vector_weight : {type:"range",val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
+        vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const [scalar, setScalar] = useState(1);

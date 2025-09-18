@@ -43,21 +43,21 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
     const { pushToast } = useToast();
 
     useEffect(() => {
-        // Want to 'cache' reranked results so not always hitting API unless response has changed.
-        if(rerank && rerankedResults){
-            setResults(rerankedResults);
-        }
-        else if(rerank && response.results.length >0 && queryText && queryText != "")
+        if(rerank && rerankedResults == null && response.results.length >0 && queryText && queryText != "")
         {
             axios.post('api/rerank', {documents:response.results,query:queryText})
                 .then(resp => {
-                    setResults(resp.data);
-                    setRerankedResults(resp.data);
+                    setResults(resp.data.results);
+                    setRerankedResults(resp.data.results);
                 })
                 .catch(error => {
                     console.log(error);
                     pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Reranking failed. ${error}`});
                 });
+        }
+        // Want to 'cache' reranked results so not always hitting API unless response has changed.
+        else if(rerank && rerankedResults){
+            setResults(rerankedResults);
         }
         else if(!rerank && response?.results.length > 0)    
         {
@@ -115,7 +115,13 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                                                 
                                             ))}
                                             {hybrid ?
-                                                <HybridScore result={r} key={`${r._id}scores`}/>
+                                                <HybridScore result={r}
+                                                    method={response.config?.combination_method.val}
+                                                    weights={{
+                                                        vector: response.config?.vector_weight.val,
+                                                        fts: response.config?.fts_weight.val
+                                                    }}
+                                                    key={`${r._id}scores`}/>
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>
                                             }
                                             {r.boost? <Banner style={{margin:"10px"}} variant="warning" image={<Bulb/>}>Semantically Boosted Result</Banner> : <></>}
@@ -132,6 +138,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true}){
                 </div>
                 <Modal open={open} setOpen={setOpen}>
                     <Subtitle>MongoDB Aggregation Pipeline</Subtitle>
+                    <p>(press 'ESC' to close)</p>
                     <Code language={'javascript'}>
                         {query ? JSON.stringify(filterQueryVectors(query),null,2) : "" }
                     </Code>

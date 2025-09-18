@@ -19,10 +19,17 @@ function setVariables(pipeline){
             }else if('$unionWith' in stage){
                 newPipeline.push({...stage,$unionWith:{...stage.$unionWith,coll:searchCollection,pipeline:setVariables(stage.$unionWith.pipeline)}})
             }else if('$rankFusion' in stage){
-                stage['$rankFusion'].input.pipelines.vectorPipeline = setVariables(stage['$rankFusion'].input.pipelines.vectorPipeline);
-                stage['$rankFusion'].input.pipelines.fullTextPipeline = setVariables(stage['$rankFusion'].input.pipelines.fullTextPipeline);
+                Object.entries(stage['$rankFusion'].input.pipelines).forEach(([name, pipeline]) =>{
+                    stage['$rankFusion'].input.pipelines[name] = setVariables(pipeline);
+                })
                 newPipeline.push(stage);
-            }else{
+            }else if('$scoreFusion' in stage){
+                Object.entries(stage['$scoreFusion'].input.pipelines).forEach(([name, pipeline]) =>{
+                    stage['$scoreFusion'].input.pipelines[name] = setVariables(pipeline);
+                })
+                newPipeline.push(stage);
+            }
+            else{
                 newPipeline.push(stage);
             }
         });
@@ -35,6 +42,7 @@ function setVariables(pipeline){
 async function getResults(collection,pipeline){
     try{
         const newPipeline = setVariables(pipeline);
+        // console.log(JSON.stringify(newPipeline,null,2));
         const start = new Date();
         const results = await collection.aggregate(newPipeline).toArray();
         const end   = new Date();
