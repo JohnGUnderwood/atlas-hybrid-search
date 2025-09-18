@@ -2,7 +2,7 @@
 This is a simple NextJS app that allows you to run Fulltext Search (FTS) and Vector Search queries against a MongoDB Atlas instance.
 
 ## About Hybrid Search
-The app is set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm. This app currently implements Relative Score Fusion (RSF) and Reciprocal Rank Fusion (RRF).
+The app is set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm.
 
 ![Compare search methods](screenshots/hybrid_search.png)
 
@@ -16,6 +16,7 @@ For both RSF and RRF algorithms the weighted and/or normalized text and vector s
 In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. By default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
 
 At the moment the app is set so you can switch between [OpenAI](https://platform.openai.com/docs/guides/embeddings), [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/understand-embeddings), [Nomic](https://docs.nomic.ai/reference/endpoints/nomic-embed-text), [Mistral](https://docs.mistral.ai/capabilities/embeddings/) and [Voyage AI](https://docs.voyageai.com/reference/embeddings-api). To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file. 
+You can also use an Ollama configuration with a local embedding model.
 
 
 If you are confident with code you could add another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/models).

@@ -24,7 +24,7 @@ const config = {
         titleField : "title",
         imageField : "poster",
         searchFields: ["cast","genres"],
-        vectorField : "voyage_doc_embedding",
+        vectorField : "voyage_embeddings.voyage_3.doc",
         vectorSourceField: ["title","fullplot","cast","genres"],
     },
     best_buy:{

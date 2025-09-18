@@ -14,8 +14,10 @@
     "@leafygreen-ui/button": "^21.0.11",
     "@leafygreen-ui/card": "^10.0.6",
     "@leafygreen-ui/checkbox": "^13.0.0",
+    "@leafygreen-ui/chip": "^1.2.1",
     "@leafygreen-ui/code": "^14.2.18",
     "@leafygreen-ui/expandable-card": "^3.2.3",
+    "@leafygreen-ui/icon": "^14.5.0",
     "@leafygreen-ui/loading-indicator": "^2.0.8",
     "@leafygreen-ui/logo": "^8.0.12",
     "@leafygreen-ui/modal": "^16.0.4",
@@ -33,6 +35,7 @@
     "next-connect": "^1.0.0",
     "openai": "^4.20.1",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "vectorious": "^6.1.14"
   }
 }
