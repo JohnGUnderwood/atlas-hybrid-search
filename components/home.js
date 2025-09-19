@@ -41,7 +41,7 @@ const Home = () => {
       getQueryCache(query)
       .then(resp => {
         if(resp){
-          pushToast({timeout:10000,variant:"note",title:"Cache Hit",description:`Used cached embedding for ${query}`});
+          pushToast({timeout:10000,variant:"note",title:"Vector Cache Hit",description:`Used cached embedding for ${query}`});
           setQueryVector(resp);
           setLoading(false);
         }else{
@@ -65,16 +65,22 @@ const Home = () => {
 
   const handleQueryChange = (event) => {
     setQuery(event.target.value);
-    getQueryCache(event.target.value)
-    .then(resp => {
-      if(resp){
-        pushToast({timeout:10000,variant:"note",title:"Cache Hit",description:`Used cached embedding for ${event.target.value}`});
-        setQueryVector(resp);
-      }
-    })
-    .catch(error => {
-      console.log(error);
-    });
+    setQueryVector(null); // reset query vector
+    console.log("query changed",event.target.value);
+    if(event.target.value !== ""){
+      getQueryCache(event.target.value)
+      .then(resp => {
+        if(resp){
+          pushToast({timeout:10000,variant:"note",title:"Vector Cache Hit",description:`Used cached embedding for ${event.target.value}`});
+          setQueryVector(resp);
+        }else{
+          setQueryVector(null);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      });
+    }
   };
 
   return (

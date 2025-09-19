@@ -57,6 +57,13 @@ function SemanticBoosting({query,queryVector}){
               pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
               console.log(error);
             });
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
         setNumCandidates(Math.min(config.numCandidates.val,10000));
     
@@ -68,7 +75,7 @@ function SemanticBoosting({query,queryVector}){
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
-                <Results queryText={query} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                <Results queryText={query} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={`No results. ${!queryVector ? "Select 'Vector Search' to run a vector query." : ''}`}/>
             </div>
         </div>
     )

@@ -22,8 +22,8 @@ function Steering({query,queryVector}){
     const defaultConfig = {
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        positiveWeight : {type:"range",val:1,range:[1,10],step:1,comment:"Weighting for positive feedback"},
-        negativeWeight : {type:"range",val:1,range:[1,10],step:1,comment:"Weighting for negative feedback"},
+        positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
+        negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
         fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
     }
     const [config, setConfig] = useState(defaultConfig)
@@ -37,9 +37,9 @@ function Steering({query,queryVector}){
     const VoteList = () => {
         return (
             <>
-                {feedback.positive.map(vote => (<Chip label={`${vote.label} (${vote.id})`} variant="green" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, positive: feedback.positive.filter(_v => _v.id !== vote.id)})}/>))}
+                {feedback.positive.map(vote => (<Chip label={`${vote.label}`} variant="green" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, positive: feedback.positive.filter(_v => _v.id !== vote.id)})}/>))}
                 {feedback.positive.length > 0 && feedback.negative.length > 0 ? <><br/><br/></> : null}
-                {feedback.negative.map(vote => (<Chip label={`${vote.label} (${vote.id})`} variant="red" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, negative: feedback.negative.filter(_v => _v.id !== vote.id)})}/>))}
+                {feedback.negative.map(vote => (<Chip label={`${vote.label}`} variant="red" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, negative: feedback.negative.filter(_v => _v.id !== vote.id)})}/>))}
             </>
         );
     }
@@ -60,6 +60,13 @@ function Steering({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             handleSearch();
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
     
     },[queryVector,config,feedback.positive,feedback.negative]);
@@ -100,8 +107,8 @@ async function getSteeringVectors(feedback,schema){
 async function search(queryVector,schema,config,feedback) {
     const steering = await getSteeringVectors(feedback,schema);
     let pipeline = [];
-    // For late score fusion we build a single $scoreFusion stage with multiple pipelines
     if(!config.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
+        // If there's no feedback default to standard vector search
         pipeline.push({$vectorSearch: {
                 index: '',
                 path: `${schema.vectorField}`,
@@ -111,6 +118,7 @@ async function search(queryVector,schema,config,feedback) {
             }
         });
     }else if(config.fusionMethod.val == "score (late)"){
+        // For late score fusion we build a single $scoreFusion stage with multiple pipelines   
         pipeline.push(
             {
                 $scoreFusion:{
@@ -132,12 +140,13 @@ async function search(queryVector,schema,config,feedback) {
                         method:"expression",
                         expression: {
                             $add: [
-                                {$multiply: ["$$query", 1]},
+                                "$$query", 1,
                                 ...steering.positive.map(_v => ({$multiply: [`$$positive_${_v._id}`, config.positiveWeight.val]})),
                                 ...steering.negative.map(_v => ({$multiply: [`$$negative_${_v._id}`, -config.negativeWeight.val]}))
                             ]
                         }
-                    }
+                    },
+                    scoreDetails:true
                 }
                 
             },
@@ -168,6 +177,7 @@ async function search(queryVector,schema,config,feedback) {
                 }
             ]
         }
+        pipeline.push({$addFields:{scoreDetails: {$meta:"scoreDetails"}}});
     }else{
         // For early fusion we modify the query vector itself
         let fusedVector;
@@ -189,11 +199,10 @@ async function search(queryVector,schema,config,feedback) {
             }
         });
     };
-
     pipeline.push(
         {
             $project: {
-                score: {$meta: "vectorSearchScore"},
+                score: {$ifNull:["$scoreDetails.value",{$meta:"vectorSearchScore"}]},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`,

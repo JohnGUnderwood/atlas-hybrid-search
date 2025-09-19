@@ -37,6 +37,13 @@ function RSF({query,queryVector}){
               pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
               console.log(error);
             });
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
     
     },[queryVector,config]);

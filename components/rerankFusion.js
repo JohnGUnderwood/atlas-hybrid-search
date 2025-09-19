@@ -28,15 +28,22 @@ function RerankFusion({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-            search(query,queryVector,schema,config)
-            .then(resp => {
-              setResponse(resp);
-              setLoading(false);
-            })
-            .catch(error => {
-              pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
-              console.log(error);
-            });
+          search(query,queryVector,schema,config)
+          .then(resp => {
+            setResponse(resp);
+            setLoading(false);
+          })
+          .catch(error => {
+            pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
+            console.log(error);
+          });
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
     
     },[queryVector,config]);

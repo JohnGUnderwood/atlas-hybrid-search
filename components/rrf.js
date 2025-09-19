@@ -28,17 +28,23 @@ function RRF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-            search(query,queryVector,config,schema)
-            .then(resp => {
-              setResponse(resp.data);
-              setLoading(false);
-            })
-            .catch(error => {
-              pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
-              console.log(error);
-            });
+          search(query,queryVector,config,schema)
+          .then(resp => {
+            setResponse(resp.data);
+            setLoading(false);
+          })
+          .catch(error => {
+            pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
+            console.log(error);
+          });
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
-    
     },[queryVector,config]);
 
     return (

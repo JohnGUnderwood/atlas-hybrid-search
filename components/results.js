@@ -130,15 +130,18 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
         if(response && response.results.length > 0)
         {
             setResults(response.results);
-            setRerankedResults(null);
-            setRerank(false);
+            
+        }else{
+            setResults([]);
         }
+        setRerankedResults(null);
+        setRerank(false);
     },[response]);
 
     return (
         <div>
         {
-        results ?
+        results && results.length > 0 ?
             <div style={{paddingLeft:"40px",paddingRight:"40px"}}>
                 <div style={{paddingTop:"25px"}}>
                     <div style={{display:"grid",gridTemplateColumns:"20% 50% 30%",gap:"5px",alignItems:"start"}}>

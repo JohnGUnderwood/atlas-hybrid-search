@@ -19,8 +19,14 @@ function FTS({query}){
                 console.log(error);
                 pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`})
             });
-        }
-    
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
+        }    
     },[query]);
 
     return (
