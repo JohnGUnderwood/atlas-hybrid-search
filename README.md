@@ -6,6 +6,14 @@ The app is set up so that you can run hybrid search queries that combine text se
 
 ![Compare search methods](screenshots/hybrid_search.png)
 
+## MongoDB Compatability
+Compatability matrix
+|   App   | MongoDB |
+| ------- | ------- |
+|  <5.1   |  >7.0.2 |
+| 5.1-6.* |   8.1+  |
+|  >6.*   |   8.2+  |
+
 ## Configuring the algorithms
 For the hybrid search algorithms you can modify the behaviour by changing the parameters using the sliders on the left.
 
