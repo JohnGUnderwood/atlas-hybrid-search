@@ -6,6 +6,8 @@ import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {searchStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
+import LoadingIndicator from "./LoadingIndicator";
+
 function RerankFusion({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
@@ -51,7 +53,10 @@ function RerankFusion({query,queryVector}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Rerank Fusion Params"/>
-          <Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.textLimit.val} Vector Search: ${config.limit.val}`} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
+          {loading
+            ?<LoadingIndicator description="Loading..."/>
+            :<Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.textLimit.val} Vector Search: ${config.limit.val}`} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
+          }
       </div>
     )
 }

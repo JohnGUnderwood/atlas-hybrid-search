@@ -5,6 +5,8 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {useApp} from "../context/AppContext";
+import LoadingIndicator from "./LoadingIndicator";
+
 function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
@@ -46,7 +48,10 @@ function VS({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
-            <Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            {loading
+                ?<LoadingIndicator description="Loading..."/>
+                :<Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            }
         </div>
     )
 }

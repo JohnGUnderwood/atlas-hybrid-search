@@ -5,13 +5,13 @@ import axios from "axios";
 // LeafyGreen
 import { Chip } from "@leafygreen-ui/chip";
 import { useToast } from '@leafygreen-ui/toast';
-import Button from '@leafygreen-ui/button';
 
 // App Components
 import Results from "./results"
 import SetParams from "./set-params";
 import {useApp} from "../context/AppContext";
 import { lcpFusion, centroidFusion } from "../lib/earlyFusion";
+import LoadingIndicator from "./LoadingIndicator";
 
 function Steering({query,queryVector}){
     const { pushToast } = useToast();
@@ -87,7 +87,10 @@ function Steering({query,queryVector}){
                 }
                 
             </div>
-            <Results feedback={feedback} setFeedback={setFeedback} queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            {loading
+                ?<LoadingIndicator description="Loading..."/>
+                :<Results feedback={feedback} setFeedback={setFeedback} queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            }
         </div>
     )
 }

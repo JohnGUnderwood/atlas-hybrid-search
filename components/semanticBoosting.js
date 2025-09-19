@@ -7,6 +7,7 @@ import { useToast } from '@leafygreen-ui/toast';
 import {searchStage,projectStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
 import { useApp } from "../context/AppContext";
+import LoadingIndicator from "./LoadingIndicator";
 
 function SemanticBoosting({query,queryVector}){
     const { pushToast } = useToast();
@@ -75,7 +76,10 @@ function SemanticBoosting({query,queryVector}){
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
-                <Results queryText={query} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={`No results. ${!queryVector ? "Select 'Vector Search' to run a vector query." : ''}`}/>
+                {loading
+                    ?<LoadingIndicator description="Loading..."/>
+                    :<Results queryText={query} response={response} msg={"numCandidates: "+numCandidates} hybrid={false} noResultsMsg={`No results. ${!queryVector ? "Select 'Vector Search' to run a vector query." : ''}`}/>
+                }
             </div>
         </div>
     )

@@ -6,6 +6,7 @@ import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from "../context/AppContext";
 import {searchStage} from "../lib/pipelineStages";
+import LoadingIndicator from "./LoadingIndicator";
 
 function RRF({query,queryVector}){
     const { pushToast } = useToast();
@@ -50,7 +51,10 @@ function RRF({query,queryVector}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
-          <Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+          {loading
+            ?<LoadingIndicator description="Loading..."/>
+            :<Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+          }
       </div>
     )
 }
