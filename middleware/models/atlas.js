@@ -1,5 +1,5 @@
 import axios from "axios";
-class VoyageAIModel {
+class AtlasVoyageModel {
     constructor(apiKey){
         this.provider = 'voyageai';
         this.model = process.env.EMBEDDING_MODEL || "voyage-4";
@@ -8,7 +8,7 @@ class VoyageAIModel {
         this.dimensions = process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1024;
         try{
             this.client = axios.create({
-                baseURL: "https://api.voyageai.com/v1/",
+                baseURL: "https://ai.mongodb.com/v1/",
                 timeout: 3000,
                 headers: {"Content-Type": "application/json","Authorization":`Bearer ${apiKey}`}
               });
@@ -69,4 +69,4 @@ class VoyageAIModel {
         }
     }
 }
-export { VoyageAIModel }
+export { AtlasVoyageModel }

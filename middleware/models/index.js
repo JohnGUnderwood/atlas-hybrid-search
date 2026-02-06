@@ -3,6 +3,7 @@ import { OpenAIModel } from "./openai";
 import { MistralModel } from "./mistral";
 import { NomicModel } from "./nomic";
 import { VoyageAIModel } from "./voyageai";
+import { AtlasVoyageModel } from "./atlas";
 import { OllamaModel } from "./ollama";
 
 export default {
@@ -11,5 +12,6 @@ export default {
     mistral:MistralModel,
     nomic:NomicModel,
     voyageai:VoyageAIModel,
-    ollama:OllamaModel
+    ollama:OllamaModel,
+    atlas: AtlasVoyageModel
 }

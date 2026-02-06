@@ -40,7 +40,7 @@ const config = {
         titleField : "title",
         imageField : "poster",
         searchFields: ["cast","genres"],
-        vectorField : "doc_embedding",
+        vectorField : "embeddings.doc.voyage-4",
         vectorSourceField: ["title","fullplot","cast","genres"],
     },
     amazon:{

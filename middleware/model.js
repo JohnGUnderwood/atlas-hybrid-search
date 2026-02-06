@@ -26,6 +26,9 @@ async function initializeModel(){
         }else if(embeddingProvider == "ollama"){
             model = new Models.ollama();
             console.log("Using Ollama embeddings");
+        }else if(embeddingProvider == "atlas"){
+            model = new Models.atlas(process.env.EMBEDDING_APIKEY);
+            console.log("Using Atlas Voyage embeddings");
         }
 
         const rerankProvider = process.env.RERANK_PROVIDER;
@@ -33,6 +36,9 @@ async function initializeModel(){
         if(rerankProvider == "voyageai"){
             rerank_model = new Models.voyageai(process.env.RERANK_APIKEY);
             console.log("Using Voyage AI reranking");
+        }else if(rerankProvider == "atlas"){
+            rerank_model = new Models.atlas(process.env.RERANK_APIKEY);
+            console.log("Using Atlas Voyage reranking");
         }
 
         modelInstance = {model, rerank_model};
