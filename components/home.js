@@ -113,6 +113,15 @@ const Home = () => {
           <p>In this strategy we use vector search to retrieve a given number of results. We then perform lexical search but boosting the unique ids of the documents returned by the vector search. This done by matching on the _id field and using the vector score as the boost value. The vector score is additive to the overall text score of the document and can be weighted by the user.</p>
           <h3>Rerank Fusion</h3>
           <p>Rerank Fusion combines lexical and vector search using a reranker. We let the reranker decide the best results, ignoring all previous scoring.</p>
+          <h3>Lexical Prefiltering for Vector Search</h3>
+          <p>A powerful feature that allows you to filter vector search results based on lexical (text) matches before the vector search is performed. This can significantly improve search relevance and performance by:
+          <ul>
+            <li>Reducing the candidate set for vector search to documents that match text criteria</li>
+            <li>Combining the precision of keyword matching with the semantic understanding of vector search</li>
+            <li>Enabling hybrid search workflows within a single query stage</li>
+          </ul>
+            To use lexical prefiltering, simply enable the "Enable lexical prefiltering for vector search" checkbox in the vector search parameters. When enabled, the query text will be used to filter candidates before performing the vector search, ensuring results satisfy both semantic and lexical relevance criteria.
+          </p>
           <h2>Reranking</h2>
           <h3>Rerank Results</h3>
           <p>When the application is run with a reranking model you can select to rerank the returned results from any of the retrieval strategies. This will send the result documents and query to the configued reranking model, which returns a new resorted result set.</p>

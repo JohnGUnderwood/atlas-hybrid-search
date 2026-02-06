@@ -1,4 +1,4 @@
-// Relative Score Fusion
+// Steering Vectors with Feedback
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -11,6 +11,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import {useApp} from "../context/AppContext";
 import { lcpFusion, centroidFusion } from "../lib/earlyFusion";
+import {vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 
 function Steering({query,queryVector}){
@@ -22,6 +23,7 @@ function Steering({query,queryVector}){
     const defaultConfig = {
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+        enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for primary vector search"},
         positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
         negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
         fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
@@ -46,7 +48,7 @@ function Steering({query,queryVector}){
 
     const handleSearch = () => {
         setLoading(true);
-        search(queryVector,schema,config,feedback)
+        search(query,queryVector,schema,config,feedback)
         .then(resp => {
           setResponse(resp.data);
           setLoading(false);
@@ -74,14 +76,14 @@ function Steering({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => ['limit','numCandidates'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
                 <br/>
                 {feedback.positive.length > 0 || feedback.negative.length > 0 ? 
                     <>
                         <h2>Steering Feedback</h2>
                         <VoteList feedback={feedback} setFeedback={setFeedback} />
                         <br/>
-                        <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => !['limit','numCandidates'].includes(k)))} setConfig={setConfig} heading=""/>
+                        <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => ['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} setConfig={setConfig} heading=""/>
                     </>
                     : <></>
                 }
@@ -107,16 +109,19 @@ async function getSteeringVectors(feedback,schema){
     }
 }
 
-async function search(queryVector,schema,config,feedback) {
+async function search(query,queryVector,schema,config,feedback) {
     let pipeline = [];
     if(!config.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
         // If there's no feedback default to standard vector search
-        pipeline.push({$vectorSearch: {
+        pipeline.push({
+            $search: {
                 index: '',
-                path: `${schema.vectorField}`,
-                queryVector: queryVector,
-                numCandidates: config.numCandidates.val,
-                limit: config.limit.val
+                vectorSearch: {
+                    path: `${schema.vectorField}`,
+                    queryVector: queryVector,
+                    numCandidates: config.numCandidates.val,
+                    limit: config.limit.val
+                }
             }
         });
     }else{
@@ -128,15 +133,14 @@ async function search(queryVector,schema,config,feedback) {
                     $scoreFusion:{
                         input:{
                             pipelines:{
-                                query: [{
-                                    $vectorSearch: {
-                                        index: '',
-                                        path: `${schema.vectorField}`,
-                                        queryVector: queryVector,
-                                        numCandidates: config.numCandidates.val,
-                                        limit: config.limit.val
-                                    }
-                                }]
+                                query: [vectorSearchStage(
+                                    queryVector,
+                                    schema,
+                                    config.numCandidates.val,
+                                    config.limit.val,
+                                    config.enablePrefilter.val,
+                                    query
+                                )]
                             },
                             normalization: "none",
                         },
@@ -158,12 +162,14 @@ async function search(queryVector,schema,config,feedback) {
             for(const v of steering.positive){
                 pipeline[0].$scoreFusion.input.pipelines[`positive_${v._id}`] = [
                     {
-                        $vectorSearch: {
+                        $search: {
                             index: '',
-                            path: `${schema.vectorField}`,
-                            queryVector: v.embedding,
-                            numCandidates: config.numCandidates.val,
-                            limit: config.limit.val
+                            vectorSearch: {
+                                path: `${schema.vectorField}`,
+                                queryVector: v.embedding,
+                                numCandidates: config.numCandidates.val,
+                                limit: config.limit.val
+                            }
                         }
                     }
                 ]
@@ -171,12 +177,14 @@ async function search(queryVector,schema,config,feedback) {
             for(const v of steering.negative){
                 pipeline[0].$scoreFusion.input.pipelines[`negative_${v._id}`] = [
                     {
-                        $vectorSearch: {
+                        $search: {
                             index: '',
-                            path: `${schema.vectorField}`,
-                            queryVector: v.embedding,
-                            numCandidates: config.numCandidates.val,
-                            limit: config.limit.val
+                            vectorSearch: {
+                                path: `${schema.vectorField}`,
+                                queryVector: v.embedding,
+                                numCandidates: config.numCandidates.val,
+                                limit: config.limit.val
+                            }
                         }
                     }
                 ]
@@ -194,12 +202,14 @@ async function search(queryVector,schema,config,feedback) {
                 fusedVector = centroidFusion(queryVector, steering.positive.map(v => v.embedding), steering.negative.map(v => v.embedding), config.positiveWeight.val, config.negativeWeight.val);
             }
             pipeline.push({
-                $vectorSearch: {
+                $search: {
                     index: '',
-                    path: `${schema.vectorField}`,
-                    queryVector: fusedVector,
-                    numCandidates: config.numCandidates.val,
-                    limit: config.limit.val
+                    vectorSearch: {
+                        path: `${schema.vectorField}`,
+                        queryVector: fusedVector,
+                        numCandidates: config.numCandidates.val,
+                        limit: config.limit.val
+                    }
                 }
             });
         }
@@ -207,7 +217,7 @@ async function search(queryVector,schema,config,feedback) {
     pipeline.push(
         {
             $project: {
-                score: {$ifNull:["$scoreDetails.value",{$meta:"vectorSearchScore"}]},
+                score: {$ifNull:["$scoreDetails.value",{$meta:"searchScore"}]},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`,

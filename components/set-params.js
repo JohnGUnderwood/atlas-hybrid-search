@@ -40,6 +40,17 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
         setConfig(prev => ({...prev, ...updatedConfig}));
     };
 
+    const handleCheckboxChange = (param, checked) => {
+        let updatedConfig = {
+            ...config,
+            [param]: {
+                ...config[param],
+                val: checked
+            }
+        };
+        setConfig(prev => ({...prev, ...updatedConfig}));
+    };
+
     return (
         <div>
             <h2>{heading}</h2>
@@ -85,6 +96,18 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
                                         <Option key={option} value={option}>{option}</Option>
                                     ))}
                                 </Select>
+                            )
+                            :
+                            config[param]['type'] === 'checkbox' ?
+                            (
+                                <Label key={param}>
+                                    <input
+                                        key={param+'_checkbox'}
+                                        type="checkbox"
+                                        checked={config[param]['val']}
+                                        onChange={(e) => handleCheckboxChange(param, e.target.checked)}
+                                    />
+                                </Label>
                             )
                             :
                             null

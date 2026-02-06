@@ -70,19 +70,27 @@ for(const searchField of schema.searchFields){
     }
   }
 }
-const vectorIndex = {
-  name: process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex",
-  type: "vectorSearch",
-  definition: {
-    "fields": [
-      {
-        "type": "vector",
-        "path": `${schema.vectorField}`,
-        "numDimensions": process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536,
-        "similarity": "cosine"
-      }
-    ]
+
+// Add vector field to the consolidated search index
+// For nested fields like voyage_embeddings.voyage_3.doc we need to create the intermediate objects in the mapping
+// E.g. "voyage_embeddings":{"type","document","fields":{"voyage_3":{"type":"document","fields":{"doc":{"type":"vector","numDimensions":1536,"similarity":"cosine"}}}}}}
+const vectorFieldParts = schema.vectorField.split('.');
+let currentLevel = searchIndex.definition.mappings.fields;
+for(let i=0; i<vectorFieldParts.length-1; i++){
+  const part = vectorFieldParts[i];
+  if(!currentLevel[part]){
+    currentLevel[part] = {
+      "type": "document",
+      "fields": {}
+    }
   }
+  currentLevel = currentLevel[part].fields;
+}
+// Finally add the vector field definition
+currentLevel[vectorFieldParts[vectorFieldParts.length-1]] = {
+  "type": "vector",
+  "numDimensions": process.env.DIMENSIONS?parseInt(process.env.DIMENSIONS):1536,
+  "similarity": "cosine"
 }
 
 console.log("Connection string: ", process.env.MDBCONNSTR);
@@ -138,7 +146,6 @@ try{
         const db = client.db(MDB_DB);
         const collection = db.collection(MDB_COLL);
         await create(collection,searchIndex);
-        await create(collection,vectorIndex);
         console.log('Existing search indexes...');
         const indexes = await collection.listSearchIndexes().toArray();
         for(const index of indexes){
