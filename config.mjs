@@ -24,7 +24,7 @@ const config = {
         titleField : "title",
         imageField : "poster",
         searchFields: ["cast","genres"],
-        vectorField : "voyage_doc_embedding",
+        vectorField : "voyage_embeddings.voyage_3.doc",
         vectorSourceField: ["title","fullplot","cast","genres"],
     },
     best_buy:{
@@ -35,14 +35,6 @@ const config = {
         vectorField : "name_embedding",
         vectorSourceField: "name"
     },
-    news:{
-        descriptionField : "content", 
-        titleField : "title",
-        imageField : "image",
-        searchFields: [],
-        vectorField : "embedding",
-        vectorSourceField: "content"
-    },
     deployed:{
         descriptionField : "fullplot",
         titleField : "title",
@@ -51,6 +43,21 @@ const config = {
         vectorField : "doc_embedding",
         vectorSourceField: ["title","fullplot","cast","genres"],
     },
+    amazon:{
+        descriptionField : "name",
+        titleField : "name",
+        imageField : "image_url",
+        searchFields: ["main_category","sub_category"],
+        vectorField : "embedding",
+        vectorSourceField: ["name","main_category","sub_category"]
+    },
+    news:{
+        descriptionField : "content",
+        titleField : "title",
+        imageField : "image",
+        searchFields: ["author"],
+        vectorField : "content",
+        vectorSourceField: "content"
+    }
 }
-
 export default config;

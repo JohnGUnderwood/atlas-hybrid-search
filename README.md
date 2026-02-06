@@ -2,9 +2,17 @@
 This is a simple NextJS app that allows you to run Fulltext Search (FTS) and Vector Search queries against a MongoDB Atlas instance.
 
 ## About Hybrid Search
-The app is set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm. This app currently implements Relative Score Fusion (RSF) and Reciprocal Rank Fusion (RRF).
+The app is set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm.
 
 ![Compare search methods](screenshots/hybrid_search.png)
+
+## MongoDB Compatability
+Compatability matrix
+|   App   | MongoDB |
+| ------- | ------- |
+|   <5.1  |  >7.0.2 |
+|   5.1+  |   8.0+  |
+|    >6   |   8.2+  |
 
 ## Configuring the algorithms
 For the hybrid search algorithms you can modify the behaviour by changing the parameters using the sliders on the left.
@@ -16,6 +24,7 @@ For both RSF and RRF algorithms the weighted and/or normalized text and vector s
 In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. By default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
 
 At the moment the app is set so you can switch between [OpenAI](https://platform.openai.com/docs/guides/embeddings), [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/understand-embeddings), [Nomic](https://docs.nomic.ai/reference/endpoints/nomic-embed-text), [Mistral](https://docs.mistral.ai/capabilities/embeddings/) and [Voyage AI](https://docs.voyageai.com/reference/embeddings-api). To use Azure simply set your `OPENAIDEPLOYMENT` and `OPENAIENDPOINT` variables in the `.env` file. 
+You can also use an Ollama configuration with a local embedding model.
 
 
 If you are confident with code you could add another embedding API by modifying the [app's API layer](pages/api/embed.js) and the [embedding model](middleware/models).
@@ -35,7 +44,7 @@ In the app the API call to embed the query is made only when the 'vector search'
 Go to the route of the project (where the `package.json` file is) and run:
 
 ```
-npm install
+npm install --legacy-peer-deps
 ```
 
 ## Load MongoDB Sample Data (optional)

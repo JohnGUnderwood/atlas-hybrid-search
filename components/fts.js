@@ -5,12 +5,17 @@ import Results from "./results"
 import { useToast } from '@leafygreen-ui/toast';
 import {searchStage,projectStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
+import LoadingIndicator from "./LoadingIndicator";
+
 function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
+    const [loading, setLoading] = useState(false);
+
     const {schema} = useApp();
     useEffect(() => {
         if(query){
+            setLoading(true);
             search(query,schema)
             .then(resp => {
                 setResponse(resp.data);
@@ -18,13 +23,24 @@ function FTS({query}){
             .catch(error => {
                 console.log(error);
                 pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`})
-            });
-        }
-    
+            }).finally(() => setLoading(false));
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
+        }    
     },[query]);
 
     return (
-        <Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
+        <>
+        {loading
+            ?<LoadingIndicator description="Loading..."/>
+            :<Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
+        }
+        </>
     )
 }
 

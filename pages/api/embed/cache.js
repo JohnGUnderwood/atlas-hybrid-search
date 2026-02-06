@@ -14,6 +14,10 @@ router.get(async (req, res) => {
                 _id:`${req.query.terms}_${req.model.provider}_${req.model.model}_${req.model.dimensions}`.toLowerCase()
             });
             if(response){
+                req.db.collection('query_cache').updateOne(
+                    { _id: response._id },
+                    { $set: { lastAccessed: new Date()}, $inc:{count:1 } }
+                );
                 res.status(200).json(response.embedding);
             }else{
                 res.status(204).send();

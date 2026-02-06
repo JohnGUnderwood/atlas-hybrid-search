@@ -5,6 +5,8 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {useApp} from "../context/AppContext";
+import LoadingIndicator from "./LoadingIndicator";
+
 function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
@@ -12,8 +14,8 @@ function VS({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+        limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -32,6 +34,13 @@ function VS({query,queryVector}){
               pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
               console.log(error);
             });
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
     
     },[queryVector,config]);
@@ -39,7 +48,10 @@ function VS({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
-            <Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            {loading
+                ?<LoadingIndicator description="Loading..."/>
+                :<Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            }
         </div>
     )
 }

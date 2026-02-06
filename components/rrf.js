@@ -6,6 +6,7 @@ import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from "../context/AppContext";
 import {searchStage} from "../lib/pipelineStages";
+import LoadingIndicator from "./LoadingIndicator";
 
 function RRF({query,queryVector}){
     const { pushToast } = useToast();
@@ -14,10 +15,11 @@ function RRF({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-      vector_weight : {val:1,range:[0,20],step:1,comment:"Weight the vector results"},
-      fts_weight : {val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
-      limit : {val:10,range:[1,25],step:1,comment:"Number of results to return"},
-      numCandidates : {val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+      combination_method : {type:"hidden",val:"rank"},
+      vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
+      fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
+      limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+      numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -27,23 +29,32 @@ function RRF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-            search(query,queryVector,config,schema)
-            .then(resp => {
-              setResponse(resp.data);
-              setLoading(false);
-            })
-            .catch(error => {
-              pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
-              console.log(error);
-            });
+          search(query,queryVector,config,schema)
+          .then(resp => {
+            setResponse(resp.data);
+            setLoading(false);
+          })
+          .catch(error => {
+            pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`});
+            console.log(error);
+          });
+        }else{
+          setResponse(prev => {
+            return {
+              ...prev,
+              results: []
+            };
+          });
         }
-    
     },[queryVector,config]);
 
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
-          <Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+          {loading
+            ?<LoadingIndicator description="Loading..."/>
+            :<Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+          }
       </div>
     )
 }
@@ -90,58 +101,9 @@ async function search(query,queryVector,config,schema) {
         }
       },
       {
-        $addFields: {
-          vs_score_details: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$scoreDetails.details",
-                  as: "item",
-                  cond: { $eq: ["$$item.inputPipelineName", "vectorPipeline"] }
-                }
-              },
-              0
-            ]
-          },
-          fts_score_details: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$scoreDetails.details",
-                  as: "item",
-                  cond: { $eq: ["$$item.inputPipelineName", "fullTextPipeline"] }
-                }
-              },
-              0
-            ]
-          },
-          score:"$scoreDetails.value"
-        }
-      },
-      {
-        $addFields: {
-          vs_score: {
-            $cond: [
-              { $and:[{$ifNull: ["$vs_score_details", false] },{$ne: ["$vs_score_details.rank", 0]}] },
-              { $multiply: ["$vs_score_details.weight",{$divide:[1,{$add:[60,"$vs_score_details.rank"]}]}] },
-              0
-            ]
-          },
-          fts_score: {
-            $cond: [
-              { $and:[{$ifNull: ["$fts_score_details", false] },{$ne: ["$fts_score_details.rank", 0]}] },
-              { $multiply: ["$fts_score_details.weight",{$divide:[1,{$add:[60,"$fts_score_details.rank"]}]}] },
-              0
-            ]
-          }
-        }
-      },
-      {
         $project: {
             _id:1,
-            vs_score:1,
-            fts_score:1,
-            score:1,
+            score:"$scoreDetails.value",
             scoreDetails:1,
             title:`$${schema.titleField}`,
             image:`$${schema.imageField}`,
@@ -155,7 +117,7 @@ async function search(query,queryVector,config,schema) {
             { 
               pipeline:pipeline
             },
-        ).then(response => resolve(response))
+        ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {
             reject(error.response.data.error);
         })
