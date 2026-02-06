@@ -1,7 +1,7 @@
 import axios from "axios";
 class AtlasVoyageModel {
     constructor(apiKey){
-        this.provider = 'voyageai';
+        this.provider = 'atlas';
         this.model = process.env.EMBEDDING_MODEL || "voyage-4";
         this.rerank_model = process.env.RERANK_MODEL || "rerank-2.5";
         this.apiKey = apiKey;
