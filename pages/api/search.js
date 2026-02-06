@@ -5,17 +5,14 @@ import { ObjectId } from 'mongodb';
 
 const searchCollection = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
 const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
-const vectorIndex = process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex";
 
 function setIndexNames(pipeline){
-    // This function sets search/vector index names and collection names in the pipeline.    
+    // This function sets search index names and collection names in the pipeline.    
     try{
         var newPipeline = [];
         pipeline.forEach(stage => {
             if('$search' in stage){
                 newPipeline.push({...stage,$search:{...stage.$search, index:searchIndex}})
-            }else if('$vectorSearch' in stage){
-                newPipeline.push({...stage,$vectorSearch:{...stage.$vectorSearch, index:vectorIndex}})
             }else if('$unionWith' in stage){
                 newPipeline.push({...stage,$unionWith:{...stage.$unionWith,coll:searchCollection,pipeline:setIndexNames(stage.$unionWith.pipeline)}})
             }else if('$rankFusion' in stage){

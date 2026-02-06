@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,projectStage} from "../lib/pipelineStages";
+import {searchStage,projectStage,vectorSearchStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
 import { useApp } from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
@@ -20,7 +20,8 @@ function SemanticBoosting({query,queryVector}){
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
         vector_weight : {type:"range",val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
-        vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"}
+        vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"},
+        enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for vector search"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const [scalar, setScalar] = useState(1);
@@ -89,22 +90,20 @@ export default SemanticBoosting;
 
 async function search(query,queryVector,schema,config,numCandidates) {
     const vector_pipeline = [
-        {
-            $vectorSearch: {
-                index: '',
-                path: `${schema.vectorField}`,
-                queryVector: queryVector,
-                numCandidates: numCandidates,
-                limit: config.vector_results.val
-
-            }
-        },
+        vectorSearchStage(
+            queryVector,
+            schema,
+            numCandidates,
+            config.vector_results.val,
+            config.enablePrefilter.val,
+            query
+        ),
         {
             $project: {
                 _id:0,
                 field:"_id",
                 value:"$_id",
-                score: {$meta: "vectorSearchScore"}
+                score: {$meta: "searchScore"}
             }
         },
         {

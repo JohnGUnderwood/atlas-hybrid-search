@@ -1,8 +1,14 @@
 # Atlas Hybrid Search
-This is a simple NextJS app that allows you to run Fulltext Search (FTS) and Vector Search queries against a MongoDB Atlas instance.
+This is a simple NextJS app that allows you to run Fulltext Search (FTS) and Vector Search queries against a MongoDB Atlas instance using a unified `$search` stage.
 
 ## About Hybrid Search
 The app is set up so that you can run hybrid search queries that combine text search (or lexical retrieval) alongside vector search (or semantic retrieval) and return a single merged result set. This merged set is created by using a rank fusion algorithm.
+
+All searches now use MongoDB's unified `$search` stage:
+- **Text Search**: Uses the `compound` operator for lexical matching
+- **Vector Search**: Uses the `vectorSearch` operator for semantic similarity
+- **Hybrid Search**: Combines both approaches using `$rankFusion` or `$scoreFusion`
+- **Prefiltered Vector Search**: Uses `vectorSearch` with a `filter` containing lexical criteria
 
 ![Compare search methods](screenshots/hybrid_search.png)
 
@@ -19,6 +25,17 @@ For the hybrid search algorithms you can modify the behaviour by changing the pa
 
 ## Scoring
 For both RSF and RRF algorithms the weighted and/or normalized text and vector scores are calculated and then summed to give the final score. The results show what proportion of each went into the final score for each document.
+
+## Lexical Prefiltering for Vector Search
+This version introduces lexical prefiltering, a powerful feature that allows you to filter vector search results based on lexical (text) matches before the vector search is performed. This can significantly improve search relevance and performance by:
+
+- Reducing the candidate set for vector search to documents that match text criteria
+- Combining the precision of keyword matching with the semantic understanding of vector search
+- Enabling hybrid search workflows within a single query stage
+
+To use lexical prefiltering, simply enable the "Enable lexical prefiltering for vector search" checkbox in the vector search parameters. When enabled, the query text will be used to filter candidates before performing the vector search, ensuring results satisfy both semantic and lexical relevance criteria.
+
+**Note:** Lexical prefiltering uses the consolidated search index with vector fields.
 
 ## Embeddings
 In order to perform vector search the input text query must be encoded (turned into a vector) using an embedding model. By default this is done using OpenAI's ada-002 model and the API key provided in the `.env` file. This is because the default sample data (see below) has been encoded using this same model. The model used for document and query embeddings must be the same.
@@ -77,7 +94,16 @@ node embed-data.mjs
 ```
 
 ## Create search indexes
-You must have created your `.env` by copying and renaming the `example.env` provided as the `create-search-indexes.mjs` script uses these values. The search indexes script attempts to create indexes based on the schema defined in `config.mjs` and selected using the `SCHEMA` environment variable. But if you are not using the `sample_mflix.embedded_movies` data then you might need to modify the search index definitions in the script to match your schema.
+You must have created your `.env` by copying and renaming the `example.env` provided as the `create-search-indexes.mjs` script uses these values. 
+
+**Important:** This version uses a consolidated search index that includes both text and vector fields. The script creates a single index (by default named "searchIndex") that contains:
+- Text fields with various analyzers for lexical search
+- A vector field for semantic search
+- Support for lexical prefiltering on vector searches
+
+The index is created based on the schema defined in `config.mjs` and selected using the `SCHEMA` environment variable. If you are not using the `sample_mflix.embedded_movies` data, you may need to modify the search index definitions in the script to match your schema.
+
+**Note:** The `MDB_VECTORIDX` environment variable is no longer used as vector fields are now part of the consolidated text search index specified by `MDB_SEARCHIDX`.
 
 N.B. if you make changes to the text search index you may need to also modify the text [search stage defintion](lib/pipelineStages.js)
 

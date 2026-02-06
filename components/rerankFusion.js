@@ -1,10 +1,10 @@
-// Reciprocal Rank Fusion
+// Rerank Fusion
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
 
@@ -20,6 +20,7 @@ function RerankFusion({query,queryVector}){
       limit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of vector search results"},
       show : {type:"range",val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
       numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+      enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for vector search"}
     }
 
     const [config, setConfig] = useState(defaultConfig)
@@ -66,15 +67,14 @@ export default RerankFusion;
 async function search(query,queryVector,schema,config) {
     
     const pipeline = [
-        {
-          $vectorSearch: {
-            index: '',
-            path: `${schema.vectorField}`,
-            queryVector: queryVector,
-            numCandidates: config.numCandidates.val,
-            limit: config.limit.val
-          }
-        },
+        vectorSearchStage(
+            queryVector,
+            schema,
+            config.numCandidates.val,
+            config.limit.val,
+            config.enablePrefilter.val,
+            query
+        ),
         {
           $project: {
             _id: 1, 

@@ -5,7 +5,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from "../context/AppContext";
-import {searchStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 
 function RRF({query,queryVector}){
@@ -20,6 +20,7 @@ function RRF({query,queryVector}){
       fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
       limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
       numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+      enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for vector search"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -68,15 +69,14 @@ async function search(query,queryVector,config,schema) {
           input:{
             pipelines:{
               vectorPipeline:[
-                {
-                  $vectorSearch: {
-                    index: '',
-                    path: `${schema.vectorField}`,
-                    queryVector: queryVector,
-                    numCandidates: config.numCandidates.val,
-                    limit: config.limit.val
-                  }
-                },
+                vectorSearchStage(
+                  queryVector,
+                  schema,
+                  config.numCandidates.val,
+                  config.limit.val,
+                  config.enablePrefilter.val,
+                  query
+                )
               ],
               fullTextPipeline:[
                 searchStage(query,schema),

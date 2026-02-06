@@ -1,10 +1,11 @@
-// Relative Score Fusion
+// Vector Search
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {useApp} from "../context/AppContext";
+import {vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 
 function VS({query,queryVector}){
@@ -16,6 +17,7 @@ function VS({query,queryVector}){
     const defaultConfig = {
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+        enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for vector search"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -25,7 +27,7 @@ function VS({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(queryVector,schema,config)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -58,20 +60,19 @@ function VS({query,queryVector}){
 
 export default VS;
 
-async function search(queryVector,schema,config) {
+async function search(query,queryVector,schema,config) {
     const pipeline = [
-        {
-            $vectorSearch: {
-                index: '',
-                path: `${schema.vectorField}`,
-                queryVector: queryVector,
-                numCandidates: config.numCandidates.val,
-                limit: config.limit.val
-            }
-        },
+        vectorSearchStage(
+            queryVector,
+            schema,
+            config.numCandidates.val,
+            config.limit.val,
+            config.enablePrefilter.val,
+            query
+        ),
         {
             $project: {
-                score: {$meta: "vectorSearchScore"},
+                score: {$meta: "searchScore"},
                 title:`$${schema.titleField}`,
                 image:`$${schema.imageField}`,
                 description:`$${schema.descriptionField}`,
