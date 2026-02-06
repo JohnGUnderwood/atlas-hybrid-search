@@ -92,7 +92,7 @@ const Home = () => {
       <div style={{maxWidth:"120px"}}><Button onClick={()=>handleSearch()} variant="primary">Vector Search</Button></div>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"120px 120px",gap:"10px",alignItems:"start"}}>
-      <div style={{maxWidth:"120px"}}><Button onClick={()=>setOpen("indexes")}>Show Indexes</Button></div>
+      <div style={{maxWidth:"120px"}}><Button onClick={()=>setOpen("indexes")}>Show Index</Button></div>
       <div style={{maxWidth:"120px"}}><Button onClick={()=>setOpen("sample")}>Sample Doc</Button></div>
     </div>
     {loading?<LoadingIndicator/>:<></>}
@@ -155,25 +155,9 @@ const Home = () => {
     </Tabs>
     <Modal open={open !== false} setOpen={setOpen}>
       { open == "indexes" ?
-        <>
-        <ExpandableCard
-          title="Atlas Search"
-          darkMode={false}
-        >
-          <Code language={'javascript'}>
-            {indexes ? JSON.stringify(indexes.searchIndex,null,2) : "" }
-          </Code>
-        </ExpandableCard>
-        <br/>    
-        <ExpandableCard
-          title="Atlas Vector Search"
-          darkMode={false}
-        >
-          <Code language={'javascript'}>
-            {indexes ? JSON.stringify(indexes.vectorIndex,null,2) : "" }
-          </Code>
-        </ExpandableCard>
-        </>
+        <Code language={'javascript'}>
+          {indexes ? JSON.stringify(indexes,null,2) : "" }
+        </Code>
         : open == "sample" ?
           <Code language={'javascript'}>
             {sample ? JSON.stringify(sample,null,2) : "" }

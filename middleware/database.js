@@ -37,7 +37,6 @@ async function mongodb(){
     const db = process.env.MDB_DB ? process.env.MDB_DB : "sample_mflix";
     const coll = process.env.MDB_COLL ? process.env.MDB_COLL : "movies_embedded_ada";
     const searchIndex = process.env.MDB_SEARCHIDX ? process.env.MDB_SEARCHIDX : "searchIndex";
-    const vectorIndex = process.env.MDB_VECTORIDX ? process.env.MDB_VECTORIDX : "vectorIndex";
     try{
         const thisClient = new MongoClient(uri);
         try{
@@ -46,16 +45,14 @@ async function mongodb(){
                 var check = await checkCollections(thisClient,db,coll);
                 if(check){
                     var searchIndexDef = null;
-                    var vectorIndexDef = null;
                     try{
                         searchIndexDef = await getSearchIndex(thisClient,db,coll,searchIndex);
-                        vectorIndexDef = await getSearchIndex(thisClient,db,coll,vectorIndex);
                     }
                     catch(error){
                         console.log(`Fetching index failed ${error}`)
                         throw error;
                     }
-                    return {client:thisClient,db:db,coll:coll,searchIndex:searchIndexDef,vectorIndex:vectorIndexDef};
+                    return {client:thisClient,db:db,coll:coll,searchIndex:searchIndexDef};
                 }else{
                     console.log(`Collection '${coll}' not found in '${db}'`)
                     throw new Error(`Collection '${coll}' not found in '${db}'`,{cause:"CollectionNotFound"})
@@ -82,11 +79,10 @@ async function middleware(req, res, next) {
     req.db = req.dbClient.db(connection.db);
     req.collection = req.db.collection(connection.coll);
     req.searchIndex = connection.searchIndex;
-    req.vectorIndex = connection.vectorIndex;
 
     const schemaName = process.env.SCHEMA ? process.env.SCHEMA : "default";
     req.schema = config[schemaName]; 
-    console.log(`Connected to database: ${connection.db}\ncollection: ${connection.coll}\nsearchIndex: ${connection.searchIndex.name}\nvectorIndex: ${connection.vectorIndex.name}\nschema: ${schemaName}`)
+    console.log(`Connected to database: ${connection.db}\ncollection: ${connection.coll}\nsearchIndex: ${connection.searchIndex.name}\nschema: ${schemaName}`)
     return next();
 }
 
