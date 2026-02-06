@@ -21,7 +21,7 @@ function SemanticBoosting({query,queryVector}){
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
         vector_weight : {type:"range",val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
         vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"},
-        enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for vector search"}
+        enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter vector search by keywords"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const [scalar, setScalar] = useState(1);

@@ -21,7 +21,7 @@ function RSF({query,queryVector}){
         fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for vector search"}
+        enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter vector search by keywords"}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {

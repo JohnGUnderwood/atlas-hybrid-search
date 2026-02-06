@@ -23,7 +23,7 @@ function Steering({query,queryVector}){
     const defaultConfig = {
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        enablePrefilter : {type:"checkbox",val:false,comment:"Enable lexical prefiltering for primary vector search"},
+        enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter primary vector search by keywords"},
         positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
         negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
         fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
@@ -201,17 +201,16 @@ async function search(query,queryVector,schema,config,feedback) {
                 // Using Centroid geometry
                 fusedVector = centroidFusion(queryVector, steering.positive.map(v => v.embedding), steering.negative.map(v => v.embedding), config.positiveWeight.val, config.negativeWeight.val);
             }
-            pipeline.push({
-                $search: {
-                    index: '',
-                    vectorSearch: {
-                        path: `${schema.vectorField}`,
-                        queryVector: fusedVector,
-                        numCandidates: config.numCandidates.val,
-                        limit: config.limit.val
-                    }
-                }
-            });
+            pipeline.push(
+                vectorSearchStage(
+                    fusedVector,
+                    schema,
+                    config.numCandidates.val,
+                    config.limit.val,
+                    config.enablePrefilter.val,
+                    query
+                )
+            );
         }
     };
     pipeline.push(
