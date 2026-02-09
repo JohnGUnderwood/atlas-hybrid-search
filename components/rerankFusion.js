@@ -7,6 +7,7 @@ import { useToast } from '@leafygreen-ui/toast';
 import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
+import FilterFields from "./filter-fields";
 
 function RerankFusion({query,queryVector}){
     const { pushToast } = useToast();
@@ -14,13 +15,15 @@ function RerankFusion({query,queryVector}){
     const [loading, setLoading] = useState(false);
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
-    const defaultConfig = {    
-      combination_method : {type:"hidden",val:"rerank"},  
-      textLimit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of text search results"},
-      limit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of vector search results"},
-      show : {type:"range",val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
-      numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-      enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter vector search by keywords"}
+    const defaultConfig = {
+      params:{    
+        combination_method : {type:"hidden",val:"rerank"},  
+        textLimit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of text search results"},
+        limit : {type:"range",val:20,range:[1,50],step:1,comment:"Number of vector search results"},
+        show : {type:"range",val:10,range:[1,25],step:1,comment:"Number of user-facing results to return"},
+        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},    
+      },
+      filters:{}
     }
 
     const [config, setConfig] = useState(defaultConfig)
@@ -53,10 +56,13 @@ function RerankFusion({query,queryVector}){
 
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-          <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Rerank Fusion Params"/>
+          <div>
+            <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Rerank Fusion Params"/>
+            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
+          </div>
           {loading
             ?<LoadingIndicator description="Loading..."/>
-            :<Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.textLimit.val} Vector Search: ${config.limit.val}`} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
+            :<Results queryText={query} schema={schema} response={response} msg={`Text Search: ${config.params.textLimit.val} Vector Search: ${config.params.limit.val}`} hybrid={false} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."} rerankOpt={false}/>
           }
       </div>
     )
@@ -70,10 +76,7 @@ async function search(query,queryVector,schema,config) {
         vectorSearchStage(
             queryVector,
             schema,
-            config.numCandidates.val,
-            config.limit.val,
-            config.enablePrefilter.val,
-            query
+            config
         ),
         {
           $project: {
@@ -90,7 +93,7 @@ async function search(query,queryVector,schema,config) {
             pipeline: [
               searchStage(query,schema),
               {
-                $limit: config.textLimit.val
+                $limit: config.params.textLimit.val
               },
               {
                 $project: {
@@ -140,7 +143,7 @@ async function search(query,queryVector,schema,config) {
         })
         .then(({response, rerankResponse}) => {
             // trim array to k results
-            var results = rerankResponse.data.results.slice(0,config.show.val);
+            var results = rerankResponse.data.results.slice(0,config.params.show.val);
             // use re-rank score as score and remove re-rank flag for UI purposes
             results = results.map((doc) => ({...doc, score: doc.rerank_score, reranked: undefined}));
             // Add both times together

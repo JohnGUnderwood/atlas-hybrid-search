@@ -179,10 +179,10 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
                                             ))}
                                             {hybrid ?
                                                 <HybridScore result={r}
-                                                    method={response.config?.combination_method.val}
+                                                    method={response.config.params?.combination_method.val}
                                                     weights={{
-                                                        vector: response.config?.vector_weight.val,
-                                                        fts: response.config?.fts_weight.val
+                                                        vector: response.config.params?.vector_weight.val,
+                                                        fts: response.config.params?.fts_weight.val
                                                     }}
                                                     key={`${r._id}scores`}/>
                                             :<p key={`${r._id}score`}>score : <span style={{fontWeight:"normal"}}>{r.score}</span></p>

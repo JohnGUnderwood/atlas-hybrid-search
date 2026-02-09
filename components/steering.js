@@ -13,6 +13,7 @@ import {useApp} from "../context/AppContext";
 import { lcpFusion, centroidFusion } from "../lib/earlyFusion";
 import {vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
+import FilterFields from "./filter-fields";
 
 function Steering({query,queryVector}){
     const { pushToast } = useToast();
@@ -21,12 +22,14 @@ function Steering({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter primary vector search by keywords"},
-        positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
-        negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
-        fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
+        params:{
+            limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+            positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
+            negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
+            fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
+        },
+        filters:{}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -76,7 +79,8 @@ function Steering({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
                 <br/>
                 {feedback.positive.length > 0 || feedback.negative.length > 0 ? 
                     <>
@@ -91,7 +95,7 @@ function Steering({query,queryVector}){
             </div>
             {loading
                 ?<LoadingIndicator description="Loading..."/>
-                :<Results feedback={feedback} setFeedback={setFeedback} queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                :<Results feedback={feedback} setFeedback={setFeedback} queryText={query} response={response} msg={"numCandidates: "+(config.params.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
             }
         </div>
     )
@@ -111,22 +115,18 @@ async function getSteeringVectors(feedback,schema){
 
 async function search(query,queryVector,schema,config,feedback) {
     let pipeline = [];
-    if(!config.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
+    if(!config.params.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
         // If there's no feedback default to standard vector search
-        pipeline.push({
-            $search: {
-                index: '',
-                vectorSearch: {
-                    path: `${schema.vectorField}`,
-                    queryVector: queryVector,
-                    numCandidates: config.numCandidates.val,
-                    limit: config.limit.val
-                }
-            }
-        });
+        pipeline.push(
+            vectorSearchStage(
+                queryVector,
+                schema,
+                config,
+                query
+        ));
     }else{
         const steering = await getSteeringVectors(feedback,schema);
-        if(config.fusionMethod.val == "score (late)"){
+        if(config.params.fusionMethod.val == "score (late)"){
             // For late score fusion we build a single $scoreFusion stage with multiple pipelines   
             pipeline.push(
                 {
@@ -136,9 +136,7 @@ async function search(query,queryVector,schema,config,feedback) {
                                 query: [vectorSearchStage(
                                     queryVector,
                                     schema,
-                                    config.numCandidates.val,
-                                    config.limit.val,
-                                    config.enablePrefilter.val,
+                                    config,
                                     query
                                 )]
                             },
@@ -149,8 +147,8 @@ async function search(query,queryVector,schema,config,feedback) {
                             expression: {
                                 $add: [
                                     "$$query", 1,
-                                    ...steering.positive.map(_v => ({$multiply: [`$$positive_${_v._id}`, config.positiveWeight.val]})),
-                                    ...steering.negative.map(_v => ({$multiply: [`$$negative_${_v._id}`, -config.negativeWeight.val]}))
+                                    ...steering.positive.map(_v => ({$multiply: [`$$positive_${_v._id}`, config.params.positiveWeight.val]})),
+                                    ...steering.negative.map(_v => ({$multiply: [`$$negative_${_v._id}`, -config.params.negativeWeight.val]}))
                                 ]
                             }
                         },
@@ -167,8 +165,8 @@ async function search(query,queryVector,schema,config,feedback) {
                             vectorSearch: {
                                 path: `${schema.vectorField}`,
                                 queryVector: v.embedding,
-                                numCandidates: config.numCandidates.val,
-                                limit: config.limit.val
+                                numCandidates: config.params.numCandidates.val,
+                                limit: config.params.limit.val
                             }
                         }
                     }
@@ -182,8 +180,8 @@ async function search(query,queryVector,schema,config,feedback) {
                             vectorSearch: {
                                 path: `${schema.vectorField}`,
                                 queryVector: v.embedding,
-                                numCandidates: config.numCandidates.val,
-                                limit: config.limit.val
+                                numCandidates: config.params.numCandidates.val,
+                                limit: config.params.limit.val
                             }
                         }
                     }
@@ -193,22 +191,19 @@ async function search(query,queryVector,schema,config,feedback) {
         }else{
             // For early fusion we modify the query vector itself
             let fusedVector;
-            if(config.fusionMethod.val == "lcp (early)"){
+            if(config.params.fusionMethod.val == "lcp (early)"){
                 // Using Linear Combination with Projection
-                fusedVector = lcpFusion(queryVector, steering.positive.map(v => v.embedding), steering.negative.map(v => v.embedding), config.positiveWeight.val, config.negativeWeight.val);
+                fusedVector = lcpFusion(queryVector, steering.positive.map(v => v.embedding), steering.negative.map(v => v.embedding), config.params.positiveWeight.val, config.params.negativeWeight.val);
             }
-            else if(config.fusionMethod.val == "centroid (early)"){
+            else if(config.params.fusionMethod.val == "centroid (early)"){
                 // Using Centroid geometry
-                fusedVector = centroidFusion(queryVector, steering.positive.map(v => v.embedding), steering.negative.map(v => v.embedding), config.positiveWeight.val, config.negativeWeight.val);
+                fusedVector = centroidFusion(queryVector, steering.positive.map(v => v.embedding), steering.negative.map(v => v.embedding), config.params.positiveWeight.val, config.params.negativeWeight.val);
             }
             pipeline.push(
                 vectorSearchStage(
                     fusedVector,
                     schema,
-                    config.numCandidates.val,
-                    config.limit.val,
-                    config.enablePrefilter.val,
-                    query
+                    config
                 )
             );
         }

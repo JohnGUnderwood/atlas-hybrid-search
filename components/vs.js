@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
+import FilterFields from "./filter-fields";
 import { useToast } from '@leafygreen-ui/toast';
 import {useApp} from "../context/AppContext";
 import {vectorSearchStage} from "../lib/pipelineStages";
@@ -13,21 +14,26 @@ function VS({query,queryVector}){
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
     const {schema} = useApp();
+    
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter vector search by keywords"}
+        params: {
+            limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"}
+        },
+        filters: {}
     }
     const [config, setConfig] = useState(defaultConfig)
+    
     const resetConfig = () => {
         setConfig(defaultConfig);
     }
 
     useEffect(() => {
+        console.log("Running vector search with config: ", config);
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config)
+            search(queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -49,10 +55,13 @@ function VS({query,queryVector}){
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+            <div>
+                <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
+            </div>
             {loading
                 ?<LoadingIndicator description="Loading..."/>
-                :<Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+                :<Results queryText={query} response={response} msg={"numCandidates: "+(config.params.numCandidates.val)} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
             }
         </div>
     )
@@ -60,15 +69,12 @@ function VS({query,queryVector}){
 
 export default VS;
 
-async function search(query,queryVector,schema,config) {
+async function search(queryVector,schema,config) {
     const pipeline = [
         vectorSearchStage(
             queryVector,
             schema,
-            config.numCandidates.val,
-            config.limit.val,
-            config.enablePrefilter.val,
-            query
+            config
         ),
         {
             $project: {

@@ -8,6 +8,8 @@ import {searchStage,projectStage,vectorSearchStage} from "../lib/pipelineStages"
 import ScalarSlider from "./scalarSlider";
 import { useApp } from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
+import FilterFields from "./filter-fields";
+
 
 function SemanticBoosting({query,queryVector}){
     const { pushToast } = useToast();
@@ -16,16 +18,18 @@ function SemanticBoosting({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        vector_results : {type:"range",val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
-        limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        vector_weight : {type:"range",val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
-        vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"},
-        enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter vector search by keywords"}
+        params:{
+            vector_results : {type:"range",val:20,range:[1,100],step:1,comment:"How many vector results to fetch"},
+            limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+            vector_weight : {type:"range",val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
+            vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"},
+        },
+        filters:{}
     }
     const [config, setConfig] = useState(defaultConfig)
     const [scalar, setScalar] = useState(1);
-    const [numCandidates, setNumCandidates] = useState(Math.min(defaultConfig.numCandidates.val,10000));
+    const [numCandidates, setNumCandidates] = useState(Math.min(defaultConfig.params.numCandidates.val,10000));
     const resetConfig = () => {
         setConfig(defaultConfig);
         setScalar(1);
@@ -35,22 +39,25 @@ function SemanticBoosting({query,queryVector}){
         value = parseFloat(value);
         setScalar(value);
         const vector_results = value*10;
-        const numCandidates = defaultConfig.numCandidates.val*vector_results;
+        const numCandidates = defaultConfig.params.numCandidates.val*vector_results;
         const vector_weight = value;
         const vector_score_cutoff = (1-value/10);
         setConfig(prevConfig =>({
             ...prevConfig,
-            vector_results: {...prevConfig.vector_results,val:vector_results},
-            numCandidates: {...prevConfig.numCandidates,val:numCandidates},
-            vector_weight: {...prevConfig.vector_weight,val:vector_weight},
-            vector_score_cutoff: {...prevConfig.vector_score_cutoff,val:vector_score_cutoff}
+            params: {
+                ...prevConfig.params,
+                vector_results: {...prevConfig.params.vector_results,val:vector_results},
+                numCandidates: {...prevConfig.params.numCandidates,val:numCandidates},
+                vector_weight: {...prevConfig.params.vector_weight,val:vector_weight},
+                vector_score_cutoff: {...prevConfig.params.vector_score_cutoff,val:vector_score_cutoff}
+            }
         }));
     };
 
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config,numCandidates)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -67,13 +74,16 @@ function SemanticBoosting({query,queryVector}){
             };
           });
         }
-        setNumCandidates(Math.min(config.numCandidates.val,10000));
+        setNumCandidates(Math.min(config.params.numCandidates.val,10000));
     
     },[queryVector,config]);
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Semantic Boosting Params"/>
+            <div>
+                <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Semantic Boosting Params"/>
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
+            </div>
             <div>
                 <br/>
                 <ScalarSlider value={scalar} handleSliderChange={handleScalarChange} labels={['Search for just these words','Search for similar meanings (semantic search)']} step={0.1} minMax={[1,10]}/>
@@ -88,14 +98,12 @@ function SemanticBoosting({query,queryVector}){
 
 export default SemanticBoosting;
 
-async function search(query,queryVector,schema,config,numCandidates) {
+async function search(query,queryVector,schema,config) {
     const vector_pipeline = [
         vectorSearchStage(
             queryVector,
             schema,
-            numCandidates,
-            config.vector_results.val,
-            config.enablePrefilter.val,
+            config,
             query
         ),
         {
@@ -108,7 +116,7 @@ async function search(query,queryVector,schema,config,numCandidates) {
         },
         {
             $match:{
-                score:{$gte:config.vector_score_cutoff.val}
+                score:{$gte:config.params.vector_score_cutoff.val}
             }
         }
     ];
@@ -121,7 +129,7 @@ async function search(query,queryVector,schema,config,numCandidates) {
             return {
                 field: r.field,
                 value: r.value,
-                score: r.score*config.vector_weight.val
+                score: r.score*config.params.vector_weight.val
             }
         });
         boost_scores = Object.fromEntries(vector_results.data.results.map(b => [b.value,b.score]));
@@ -132,7 +140,7 @@ async function search(query,queryVector,schema,config,numCandidates) {
         const lexical_pipeline = [
             searchStage(query,schema),
             project,
-            {$limit: config.limit.val}
+            {$limit: config.params.limit.val}
         ];
         var response = await axios.post(`api/search`,
             { 

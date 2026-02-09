@@ -2,6 +2,7 @@ import { Label } from '@leafygreen-ui/typography';
 import Button from '@leafygreen-ui/button';
 import LoadingIndicator from "./LoadingIndicator";
 import { Select, Option } from '@leafygreen-ui/select';
+import styles from "./shared.module.css";
 
 function SetParams({loading,config,heading,resetConfig=null,setConfig}){
     const handleSliderChange = (param, newValue) => {
@@ -26,7 +27,7 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
             };
         }
   
-        setConfig(prev => ({...prev, ...updatedConfig}));
+        setConfig(prev => ({...prev, params: {...prev.params, ...updatedConfig}}));
     };
 
     const handleMultiChange = (param, value) => {
@@ -37,7 +38,7 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
                 val: value
             }
         };
-        setConfig(prev => ({...prev, ...updatedConfig}));
+        setConfig(prev => ({...prev, params: {...prev.params, ...updatedConfig}}));
     };
 
     const handleCheckboxChange = (param, checked) => {
@@ -48,7 +49,7 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
                 val: checked
             }
         };
-        setConfig(prev => ({...prev, ...updatedConfig}));
+        setConfig(prev => ({...prev, params: {...prev.params, ...updatedConfig}}));
     };
 
     return (
@@ -59,8 +60,8 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
                 try{
                     return (
                         <div key={param}>
-                        <p key={param+"_title"}>{param}</p>
-                        <p key={param+"_comment"}><i key={param+"_comment_i"}>{config[param]['comment']}</i></p>
+                        <p key={param+"_title"}><Label>{param}</Label></p>
+                        <p key={param+"_comment"} className={styles['param-comment']}>{config[param]['comment']}</p>
                         {config[param]['type'] === 'range'?
                             (
                                 <Label key={param}>

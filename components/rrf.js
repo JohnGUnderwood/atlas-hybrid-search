@@ -7,6 +7,7 @@ import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from "../context/AppContext";
 import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
+import FilterFields from "./filter-fields";
 
 function RRF({query,queryVector}){
     const { pushToast } = useToast();
@@ -15,12 +16,14 @@ function RRF({query,queryVector}){
     const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-      combination_method : {type:"hidden",val:"rank"},
-      vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
-      fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
-      limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-      numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-      enablePrefilter : {type:"multi",val:"none",options:["none","any","all"],comment:"Filter vector search by keywords"}
+      params:{
+        combination_method : {type:"hidden",val:"rank"},
+        vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
+        fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
+        limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
+        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+      },
+      filters:{}
     }
     const [config, setConfig] = useState(defaultConfig)
     const resetConfig = () => {
@@ -51,10 +54,13 @@ function RRF({query,queryVector}){
 
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-          <SetParams loading={loading} config={config} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
+          <div>
+            <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
+            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
+          </div>
           {loading
             ?<LoadingIndicator description="Loading..."/>
-            :<Results queryText={query} response={response} msg={"numCandidates: "+(config.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
+            :<Results queryText={query} response={response} msg={"numCandidates: "+(config.params.numCandidates.val)} hybrid={true} noResultsMsg={"No Results. Select 'Vector Search' to run a vector query."}/>
           }
       </div>
     )
@@ -72,24 +78,21 @@ async function search(query,queryVector,config,schema) {
                 vectorSearchStage(
                   queryVector,
                   schema,
-                  config.numCandidates.val,
-                  config.limit.val,
-                  config.enablePrefilter.val,
-                  query
+                  config
                 )
               ],
               fullTextPipeline:[
                 searchStage(query,schema),
                 {
-                  $limit: config.limit.val
+                  $limit: config.params.limit.val
                 }
               ]
             }
           },
           combination:{
             weights:{
-              vectorPipeline: config.vector_weight.val,
-              fullTextPipeline: config.fts_weight.val
+              vectorPipeline: config.params.vector_weight.val,
+              fullTextPipeline: config.params.fts_weight.val
             }
           },
           scoreDetails:true
