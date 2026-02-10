@@ -103,8 +103,7 @@ async function search(query,queryVector,schema,config) {
         vectorSearchStage(
             queryVector,
             schema,
-            config,
-            query
+            config
         ),
         {
             $project: {
