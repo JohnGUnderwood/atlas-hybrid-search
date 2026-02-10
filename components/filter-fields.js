@@ -7,7 +7,7 @@ import IconButton from '@leafygreen-ui/icon-button';
 import { useState } from 'react';
 import styles from "./shared.module.css";
 
-function FilterFields({query, schema, config, setConfig}){
+function FilterFields({query, schema, config, setConfig, label, description}){
     const [selectedField, setSelectedField] = useState('');
     
     const filterConfig = config.filters;
@@ -97,7 +97,7 @@ function FilterFields({query, schema, config, setConfig}){
     return (
         <div style={{marginBottom:"20px"}}>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"10px"}}>
-                <Label>Filter Vector Search</Label>
+                <Label>{label || "Filter Vector Search"}</Label>
                 {hasAnyFilters && (
                     <IconButton 
                         aria-label="Clear all filters"
@@ -107,7 +107,7 @@ function FilterFields({query, schema, config, setConfig}){
                     </IconButton>
                 )}
             </div>
-            <p className={styles['param-comment']}>Prefilter vector search results by field values</p>
+            <p className={styles['param-comment']}>{description || "Prefilter vector search results by field values"}</p>
             
             {availableFields.length > 0 && (
                 <div style={{marginBottom:"15px"}}>

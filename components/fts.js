@@ -6,17 +6,28 @@ import { useToast } from '@leafygreen-ui/toast';
 import {searchStage,projectStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
+import FilterFields from "./filter-fields";
 
 function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    // CONFIGURATION PARAMETERS
+    const defaultConfig = {
+        filters: {}
+    }
+    const [config, setConfig] = useState(defaultConfig)
+    
+    const resetConfig = () => {
+        setConfig(defaultConfig);
+    }
+
     const {schema} = useApp();
     useEffect(() => {
         if(query){
             setLoading(true);
-            search(query,schema)
+            search(query,schema,config)
             .then(resp => {
                 setResponse(resp.data);
             })
@@ -32,26 +43,35 @@ function FTS({query}){
             };
           });
         }    
-    },[query]);
+    },[query, config]);
 
     return (
-        <>
-        {loading
+        <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
+            
+            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Search" description="Add search filters on metadata"/>
+            
+            {loading
             ?<LoadingIndicator description="Loading..."/>
             :<Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
         }
-        </>
+        </div>
+        // <>
+        // {loading
+        //     ?<LoadingIndicator description="Loading..."/>
+        //     :<Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
+        // }
+        // </>
     )
 }
 
 export default FTS;
 
-async function search(query,schema) {
+async function search(query,schema,config) {
     // CONFIGURATION PARAMETERS
     const k = 10
 
     const pipeline = [
-        searchStage(query,schema),
+        searchStage(query,schema,config),
         projectStage(schema),
         {$limit: k}
     ]
