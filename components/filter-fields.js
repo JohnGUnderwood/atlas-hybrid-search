@@ -95,9 +95,9 @@ function FilterFields({query, schema, config, setConfig, label, description}){
     const hasAnyFilters = activeFields.length > 0;
 
     return (
-        <div style={{marginBottom:"20px"}}>
+        <div style={{marginBottom:"20px", marginTop:"20px"}}>
             <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"10px"}}>
-                <Label>{label || "Filter Vector Search"}</Label>
+                <Label>{label || "Filter Retrieval"}</Label>
                 {hasAnyFilters && (
                     <IconButton 
                         aria-label="Clear all filters"
@@ -107,7 +107,7 @@ function FilterFields({query, schema, config, setConfig, label, description}){
                     </IconButton>
                 )}
             </div>
-            <p className={styles['param-comment']}>{description || "Prefilter vector search results by field values"}</p>
+            <p className={styles['param-comment']}>{description || "Add filters to text and vector searches"}</p>
             
             {availableFields.length > 0 && (
                 <div style={{marginBottom:"15px"}}>

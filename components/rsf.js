@@ -113,7 +113,7 @@ async function search(query,queryVector,schema,config) {
                             )
                         ],
                         fullTextPipeline:[
-                            searchStage(query,schema),
+                            searchStage(query,schema,config),
                             {$limit: config.params.limit.val}
                         ]
                     },

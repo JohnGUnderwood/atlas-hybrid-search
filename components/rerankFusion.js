@@ -91,7 +91,7 @@ async function search(query,queryVector,schema,config) {
           $unionWith: {
             coll: '',
             pipeline: [
-              searchStage(query,schema),
+              searchStage(query,schema,config),
               {
                 $limit: config.params.textLimit.val
               },

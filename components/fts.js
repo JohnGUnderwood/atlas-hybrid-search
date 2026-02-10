@@ -48,7 +48,7 @@ function FTS({query}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             
-            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Search" description="Add search filters on metadata"/>
+            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Text Search" description="Add search filters on metadata"/>
             
             {loading
             ?<LoadingIndicator description="Loading..."/>

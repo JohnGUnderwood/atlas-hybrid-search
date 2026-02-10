@@ -82,7 +82,7 @@ function SemanticBoosting({query,queryVector}){
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
                 <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Semantic Boosting Params"/>
-                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Search" description="Add filters to text and vector searches"/>
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig}/>
             </div>
             <div>
                 <br/>

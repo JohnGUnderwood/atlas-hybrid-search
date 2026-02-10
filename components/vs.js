@@ -57,7 +57,7 @@ function VS({query,queryVector}){
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
                 <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
-                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Vector Search" description="Add metadata prefilters to vector search" />
             </div>
             {loading
                 ?<LoadingIndicator description="Loading..."/>
