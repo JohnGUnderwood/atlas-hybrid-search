@@ -87,7 +87,7 @@ function Steering({query,queryVector}){
                         <h2>Steering Feedback</h2>
                         <VoteList feedback={feedback} setFeedback={setFeedback} />
                         <br/>
-                        <SetParams loading={loading} config={Object.fromEntries(Object.entries(config).filter(([k,v]) => ['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} setConfig={setConfig} heading=""/>
+                        <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => ['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} setConfig={setConfig} heading=""/>
                     </>
                     : <></>
                 }

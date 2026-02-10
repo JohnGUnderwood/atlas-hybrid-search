@@ -136,13 +136,15 @@ function FilterFields({query, schema, config, setConfig, label, description}){
                             <Icon glyph="X" size="small" />
                         </IconButton>
                     </div>
-                    <TextInput
-                        label=""
-                        placeholder={`Search ${field.label}...`}
-                        value={filterConfig[field.name]?.query || ''}
-                        onChange={(e) => handleQueryChange(field.name, e.target.value)}
-                        style={{marginBottom:"8px"}}
-                    />
+                    <div style={{display: "flex", marginBottom:"8px"}}>
+                        <TextInput
+                            label=""
+                            placeholder={`Search ${field.label}...`}
+                            value={filterConfig[field.name]?.query || ''}
+                            onChange={(e) => handleQueryChange(field.name, e.target.value)}
+                            style={{flex: 1, minWidth: 0}}
+                        />
+                    </div>
                     <SegmentedControl
                         label="Match Terms"
                         value={filterConfig[field.name]?.matchCriteria || 'any'}
