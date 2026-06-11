@@ -3,3 +3,61 @@
   color: #889397;
   margin-bottom: 15px;
 }
+
+.steeringRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 60px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.steeringIcons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 60px;
+}
+
+.steeringLgInput {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.steeringLgInput[data-lgid="lg-text_input"] {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.steeringLgInput[data-lgid="lg-text_input"] > div {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.steeringLgInput[data-lgid="lg-text_input"] input {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+.steeringRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 60px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.steeringTextInput {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.steeringIcons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 60px;
+}
