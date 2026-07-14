@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
@@ -14,7 +14,7 @@ function RSF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema} = useApp();
+    const {schema,model} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params:{
@@ -24,6 +24,7 @@ function RSF({query,queryVector}){
             fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
             limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
             numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+            ...rerankParam(model)
         },
         filters:{}
     }
@@ -35,7 +36,7 @@ function RSF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config)
+            search(query,queryVector,schema,config,model)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -71,7 +72,7 @@ function RSF({query,queryVector}){
 
 export default RSF;
 
-async function search(query,queryVector,schema,config) {
+async function search(query,queryVector,schema,config,model) {
     var combination = {};
     // Build the combination object based on the selected method
     if(config.params.combination_method.val === "avg"){
@@ -141,10 +142,11 @@ async function search(query,queryVector,schema,config) {
         },
     ]
 
+    const finalPipeline = appendRerankStage(pipeline, {query, schema, model, config});
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : pipeline
+                pipeline : finalPipeline
             },
         ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {

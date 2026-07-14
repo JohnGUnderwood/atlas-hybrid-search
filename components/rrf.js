@@ -5,7 +5,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from "../context/AppContext";
-import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
 
@@ -13,7 +13,7 @@ function RRF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema} = useApp();
+    const {schema,model} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
       params:{
@@ -22,6 +22,7 @@ function RRF({query,queryVector}){
         fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
         numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+        ...rerankParam(model)
       },
       filters:{}
     }
@@ -33,7 +34,7 @@ function RRF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-          search(query,queryVector,config,schema)
+          search(query,queryVector,config,schema,model)
           .then(resp => {
             setResponse(resp.data);
             setLoading(false);
@@ -68,7 +69,7 @@ function RRF({query,queryVector}){
 
 export default RRF;
 
-async function search(query,queryVector,config,schema) {
+async function search(query,queryVector,config,schema,model) {
     const pipeline = [
       {
         $rankFusion: {
@@ -118,7 +119,7 @@ async function search(query,queryVector,config,schema) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-              pipeline:pipeline
+              pipeline:appendRerankStage(pipeline, {query, schema, model, config})
             },
         ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {

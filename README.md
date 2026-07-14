@@ -51,6 +51,15 @@ In the app the API call to embed the query is made only when the 'vector search'
 
 ![Hybrid scoring](screenshots/hybrid_scoring.png)
 
+## Reranking
+Reranking applies a model to an initial set of search results and reorders them by relevance to the query. Configure it with `RERANK_PROVIDER` and `RERANK_MODEL` in `.env`. The supported providers are `voyageai`, `atlas`, and `native`.
+
+The `voyageai` and `atlas` providers send results to a reranking API and require `RERANK_APIKEY`. In the application, enable **Use Reranker** to rerank and cache the current result set. Results display the reranker score and whether each document moved up or down from its original position.
+
+The `native` provider uses MongoDB's `$rerank` aggregation stage and does not require `RERANK_APIKEY`. Search views expose an **Apply MongoDB $rerank stage in the query pipeline** option, while Rerank Fusion applies the stage directly. The pipeline tracks each document's position before and after reranking so the results display the same movement indicator and reranker score as the API-based providers.
+
+Native reranking requires a MongoDB deployment that supports `$rerank` and access to the configured reranking model.
+
 ## Prerequisites
 1. You will need access to an Atlas Cluster.
 2. [Node installed](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs)

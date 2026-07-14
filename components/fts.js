@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
+import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,projectStage} from "../lib/pipelineStages";
+import {searchStage,projectStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
@@ -12,9 +13,13 @@ function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
+    const {schema,model} = useApp();
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
+        params: {
+            ...rerankParam(model)
+        },
         filters: {}
     }
     const [config, setConfig] = useState(defaultConfig)
@@ -23,11 +28,10 @@ function FTS({query}){
         setConfig(defaultConfig);
     }
 
-    const {schema} = useApp();
     useEffect(() => {
         if(query){
             setLoading(true);
-            search(query,schema,config)
+            search(query,schema,config,model)
             .then(resp => {
                 setResponse(resp.data);
             })
@@ -47,9 +51,14 @@ function FTS({query}){
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            
-            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Text Search" description="Add search filters on metadata"/>
-            
+            <div>
+                {Object.keys(config.params).length > 0
+                    ? <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Text Search Params"/>
+                    : <></>
+                }
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Text Search" description="Add search filters on metadata"/>
+            </div>
+
             {loading
             ?<LoadingIndicator description="Loading..."/>
             :<Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
@@ -66,7 +75,7 @@ function FTS({query}){
 
 export default FTS;
 
-async function search(query,schema,config) {
+async function search(query,schema,config,model) {
     // CONFIGURATION PARAMETERS
     const k = 10
 
@@ -78,7 +87,7 @@ async function search(query,schema,config) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : pipeline
+                pipeline : appendRerankStage(pipeline, {query, schema, model, config})
             },
         ).then(response => resolve(response))
         .catch((error) => {

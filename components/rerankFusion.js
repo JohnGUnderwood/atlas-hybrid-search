@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage,rerankStages} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
@@ -13,7 +13,7 @@ function RerankFusion({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema} = useApp();
+    const {schema,model} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
       params:{    
@@ -34,7 +34,7 @@ function RerankFusion({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-          search(query,queryVector,schema,config)
+          search(query,queryVector,schema,config,model)
           .then(resp => {
             setResponse(resp);
             setLoading(false);
@@ -70,7 +70,7 @@ function RerankFusion({query,queryVector}){
 
 export default RerankFusion;
 
-async function search(query,queryVector,schema,config) {
+async function search(query,queryVector,schema,config,model) {
     
     const pipeline = [
         vectorSearchStage(
@@ -127,7 +127,32 @@ async function search(query,queryVector,schema,config) {
         },
     ]
 
-    const searchPromise = new Promise((resolve,reject) => {
+    if (model.reranking?.provider === "native") {
+      // MongoDB-native reranking runs as a $rerank stage inside the query
+      // pipeline itself, so it appears in the "Show Query" pipeline modal.
+      const path = ['title', 'description', ...schema.searchFields];
+      pipeline.push(...rerankStages(query, path, model.reranking.model, config.params.numCandidates.val));
+      return new Promise((resolve,reject) => {
+        axios.post(`api/search`,
+            { 
+              pipeline : pipeline
+            },
+        ).then(response => {
+            // trim array to k results (already reranked and scored server-side)
+            const results = response.data.results.slice(0,config.params.show.val);
+            resolve({
+                results: results,
+                query: response.data.query,
+                time: response.data.time,
+                config: config
+            });
+        })
+        .catch((error) => {
+            reject(error.response?.data?.error || error.message);
+        });
+      });
+    }else{
+      return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
               pipeline : pipeline
@@ -157,7 +182,6 @@ async function search(query,queryVector,schema,config) {
         .catch((error) => {
             reject(error.response?.data?.error || error.message);
         });
-    });
-
-    return searchPromise;
+      });
+    }
 }

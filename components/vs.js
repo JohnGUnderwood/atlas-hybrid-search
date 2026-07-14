@@ -6,20 +6,21 @@ import SetParams from "./set-params";
 import FilterFields from "./filter-fields";
 import { useToast } from '@leafygreen-ui/toast';
 import {useApp} from "../context/AppContext";
-import {vectorSearchStage} from "../lib/pipelineStages";
+import {vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 
 function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema} = useApp();
+    const {schema,model} = useApp();
     
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params: {
             limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"}
+            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+            ...rerankParam(model)
         },
         filters: {}
     }
@@ -33,7 +34,7 @@ function VS({query,queryVector}){
         console.log("Running vector search with config: ", config);
         if(queryVector){
             setLoading(true);
-            search(queryVector,schema,config)
+            search(query,queryVector,schema,config,model)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -69,7 +70,7 @@ function VS({query,queryVector}){
 
 export default VS;
 
-async function search(queryVector,schema,config) {
+async function search(query,queryVector,schema,config,model) {
     const pipeline = [
         vectorSearchStage(
             queryVector,
@@ -86,10 +87,11 @@ async function search(queryVector,schema,config) {
             }
         }
     ]
+    const finalPipeline = appendRerankStage(pipeline, {query, schema, model, config});
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : pipeline
+                pipeline : finalPipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

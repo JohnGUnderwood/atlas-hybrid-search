@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,projectStage,vectorSearchStage} from "../lib/pipelineStages";
+import {searchStage,projectStage,vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
 import ScalarSlider from "./scalarSlider";
 import { useApp } from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
@@ -15,7 +15,7 @@ function SemanticBoosting({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema} = useApp();
+    const {schema,model} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params:{
@@ -24,6 +24,7 @@ function SemanticBoosting({query,queryVector}){
             numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
             vector_weight : {type:"range",val:1,range:[1,9],step:1,comment:"Weight the vector score before boosting"},
             vector_score_cutoff : {type:"range",val:0.7,range:[0,0.99],step:0.01,comment:"Minimum vector score for result to be boosted"},
+            ...rerankParam(model)
         },
         filters:{}
     }
@@ -57,7 +58,7 @@ function SemanticBoosting({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config)
+            search(query,queryVector,schema,config,model)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -98,7 +99,7 @@ function SemanticBoosting({query,queryVector}){
 
 export default SemanticBoosting;
 
-async function search(query,queryVector,schema,config) {
+async function search(query,queryVector,schema,config,model) {
     const vector_pipeline = [
         vectorSearchStage(
             queryVector,
@@ -143,7 +144,7 @@ async function search(query,queryVector,schema,config) {
         ];
         var response = await axios.post(`api/search`,
             { 
-                pipeline : lexical_pipeline,
+                pipeline : appendRerankStage(lexical_pipeline, {query, schema, model, config}),
                 boosts:vector_boosts,
             });
         const modifiedResults = response.data.results.map(r => {r.vectorScore = boost_scores[r._id]; return r});

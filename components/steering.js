@@ -13,7 +13,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import {useApp} from "../context/AppContext";
 import { lcpFusion, centroidFusion } from "../lib/earlyFusion";
-import {vectorSearchStage} from "../lib/pipelineStages";
+import {vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
 import styles from "./shared.module.css";
@@ -22,7 +22,7 @@ function Steering({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema} = useApp();
+    const {schema,model} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params:{
@@ -30,7 +30,8 @@ function Steering({query,queryVector}){
             numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
             positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
             negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
-            fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
+            fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"},
+            ...rerankParam(model)
         },
         filters:{}
     }
@@ -71,7 +72,7 @@ function Steering({query,queryVector}){
 
     const handleSearch = () => {
         setLoading(true);
-        search(query,queryVector,schema,config,feedback)
+        search(query,queryVector,schema,config,feedback,model)
         .then(resp => {
           setResponse(resp.data);
           setLoading(false);
@@ -151,7 +152,7 @@ async function getSteeringVectors(feedback,schema){
     }
 }
 
-async function search(query,queryVector,schema,config,feedback) {
+async function search(query,queryVector,schema,config,feedback,model) {
     let pipeline = [];
     if(!config.params.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
         // If there's no feedback default to standard vector search
@@ -261,7 +262,7 @@ async function search(query,queryVector,schema,config,feedback) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : pipeline
+                pipeline : appendRerankStage(pipeline, {query, schema, model, config})
             },
         ).then(response => resolve(response))
         .catch((error) => {
