@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,projectStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
+import {searchStage,projectStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
@@ -13,13 +13,11 @@ function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema,model} = useApp();
+    const {schema} = useApp();
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
-        params: {
-            ...rerankParam(model)
-        },
+        params: {},
         filters: {}
     }
     const [config, setConfig] = useState(defaultConfig)
@@ -31,7 +29,7 @@ function FTS({query}){
     useEffect(() => {
         if(query){
             setLoading(true);
-            search(query,schema,config,model)
+            search(query,schema,config)
             .then(resp => {
                 setResponse(resp.data);
             })
@@ -53,7 +51,7 @@ function FTS({query}){
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
                 {Object.keys(config.params).length > 0
-                    ? <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Text Search Params"/>
+                    ? <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Text Search Params"/>
                     : <></>
                 }
                 <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Text Search" description="Add search filters on metadata"/>
@@ -75,7 +73,7 @@ function FTS({query}){
 
 export default FTS;
 
-async function search(query,schema,config,model) {
+async function search(query,schema,config) {
     // CONFIGURATION PARAMETERS
     const k = 10
 
@@ -87,7 +85,7 @@ async function search(query,schema,config,model) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : appendRerankStage(pipeline, {query, schema, model, config})
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

@@ -139,7 +139,9 @@ async function search(query,queryVector,schema,config,model) {
             },
         ).then(response => {
             // trim array to k results (already reranked and scored server-side)
-            const results = response.data.results.slice(0,config.params.show.val);
+            var results = response.data.results.slice(0,config.params.show.val);
+            // use re-rank score as score
+            results = results.map((doc) => ({...doc, score: doc.rerank_score}));
             resolve({
                 results: results,
                 query: response.data.query,
@@ -169,8 +171,8 @@ async function search(query,queryVector,schema,config,model) {
         .then(({response, rerankResponse}) => {
             // trim array to k results
             var results = rerankResponse.data.results.slice(0,config.params.show.val);
-            // use re-rank score as score and remove re-rank flag for UI purposes
-            results = results.map((doc) => ({...doc, score: doc.rerank_score, reranked: undefined}));
+            // use re-rank score as score
+            results = results.map((doc) => ({...doc, score: doc.rerank_score}));
             // Add both times together
             resolve({
                 results: results,

@@ -4,7 +4,7 @@ import axios from "axios";
 import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
-import {searchStage,vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
@@ -14,7 +14,7 @@ function RSF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema,model} = useApp();
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params:{
@@ -23,8 +23,7 @@ function RSF({query,queryVector}){
             vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
             fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
             limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-            ...rerankParam(model)
+            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"}
         },
         filters:{}
     }
@@ -36,7 +35,7 @@ function RSF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config,model)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -59,7 +58,7 @@ function RSF({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Relative Score Fusion Params"/>
+                <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Relative Score Fusion Params"/>
                 <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
             </div>
             {loading
@@ -72,7 +71,7 @@ function RSF({query,queryVector}){
 
 export default RSF;
 
-async function search(query,queryVector,schema,config,model) {
+async function search(query,queryVector,schema,config) {
     var combination = {};
     // Build the combination object based on the selected method
     if(config.params.combination_method.val === "avg"){
@@ -142,11 +141,10 @@ async function search(query,queryVector,schema,config,model) {
         },
     ]
 
-    const finalPipeline = appendRerankStage(pipeline, {query, schema, model, config});
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : finalPipeline
+                pipeline : pipeline
             },
         ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {

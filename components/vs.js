@@ -6,21 +6,20 @@ import SetParams from "./set-params";
 import FilterFields from "./filter-fields";
 import { useToast } from '@leafygreen-ui/toast';
 import {useApp} from "../context/AppContext";
-import {vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
+import {vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 
 function VS({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema,model} = useApp();
+    const {schema} = useApp();
     
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params: {
             limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-            ...rerankParam(model)
+            numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"}
         },
         filters: {}
     }
@@ -34,7 +33,7 @@ function VS({query,queryVector}){
         console.log("Running vector search with config: ", config);
         if(queryVector){
             setLoading(true);
-            search(query,queryVector,schema,config,model)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -57,7 +56,7 @@ function VS({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
                 <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Vector Search" description="Add metadata prefilters to vector search" />
             </div>
             {loading
@@ -70,7 +69,7 @@ function VS({query,queryVector}){
 
 export default VS;
 
-async function search(query,queryVector,schema,config,model) {
+async function search(query,queryVector,schema,config) {
     const pipeline = [
         vectorSearchStage(
             queryVector,
@@ -87,11 +86,10 @@ async function search(query,queryVector,schema,config,model) {
             }
         }
     ]
-    const finalPipeline = appendRerankStage(pipeline, {query, schema, model, config});
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : finalPipeline
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

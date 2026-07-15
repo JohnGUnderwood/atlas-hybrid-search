@@ -5,7 +5,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import { useApp } from "../context/AppContext";
-import {searchStage,vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
+import {searchStage,vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
 
@@ -13,7 +13,7 @@ function RRF({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema,model} = useApp();
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
       params:{
@@ -21,8 +21,7 @@ function RRF({query,queryVector}){
         vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
         fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
-        ...rerankParam(model)
+        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"}
       },
       filters:{}
     }
@@ -34,7 +33,7 @@ function RRF({query,queryVector}){
     useEffect(() => {
         if(queryVector){
           setLoading(true);
-          search(query,queryVector,config,schema,model)
+          search(query,queryVector,config,schema)
           .then(resp => {
             setResponse(resp.data);
             setLoading(false);
@@ -56,7 +55,7 @@ function RRF({query,queryVector}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <div>
-            <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
+            <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
             <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
           </div>
           {loading
@@ -69,7 +68,7 @@ function RRF({query,queryVector}){
 
 export default RRF;
 
-async function search(query,queryVector,config,schema,model) {
+async function search(query,queryVector,config,schema) {
     const pipeline = [
       {
         $rankFusion: {
@@ -119,7 +118,7 @@ async function search(query,queryVector,config,schema,model) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-              pipeline:appendRerankStage(pipeline, {query, schema, model, config})
+              pipeline:pipeline
             },
         ).then(response => {response.data.config = config;resolve(response)})
         .catch((error) => {

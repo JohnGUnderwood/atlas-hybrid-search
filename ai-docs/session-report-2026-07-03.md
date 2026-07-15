@@ -67,3 +67,42 @@ Verified the env/code were correct: `@next/env` and dotenv both resolve `RERANK_
 - `/api/model` returns `reranking:{provider:"native",model:"rerank-2.5"}`.
 - Error check on `middleware/model.js` and `pages/api/rerank/index.js`: no errors.
 
+## Follow-up (2026-07-15): Editable in-pipeline rerank query
+
+### Goal
+Allow the native `$rerank` query text to differ from the main search query while keeping the rerank control in the left-hand configuration panel.
+
+### Changes
+- `rerankParam(model)` now adds a text parameter that is visible only while the native rerank checkbox is enabled.
+- The text field displays the current main query by default. A user edit is tagged with the query it was made for, so changing the main query automatically discards the stale edit without a synchronization hook or additional state file.
+- `appendRerankStage(...)` uses the edited text when it belongs to the current query; otherwise it uses the current main query.
+- FTS, Vector Search, RRF, RSF, Semantic Boosting, and Steering now pass their current query to `SetParams`.
+- External API reranking remains unchanged.
+
+### Validation
+- Editor error checks passed for the shared parameter and pipeline helpers and all six updated search components.
+- `npm run build` passes.
+
+## Follow-up (2026-07-15): Simplified native rerank comparison
+
+### Goal
+Preserve the visible native `$rerank` pipeline and cached comparison experience without using `$group`, `$unwind`, `$replaceRoot`, or `$switch` stages to track result movement.
+
+### Design
+- Native and external reranking now share the Results-level "Use Reranker" control and cached toggle behavior.
+- A native rerank request appends `$rerank` and a score projection to the executed base pipeline returned by `api/search`, then executes that pipeline in a separate request.
+- Result movement is computed client-side by comparing document `_id` positions in the base and reranked arrays.
+- The query modal shows the base pipeline when reranking is off and the executed `$rerank` pipeline when reranking is on.
+- The editable native rerank query remains available beside the Results control. This supersedes the earlier left-panel implementation described above.
+
+### Changes
+- Simplified `rerankStages(...)` to `$rerank` plus an `$addFields` score projection.
+- Removed `rerankParam(...)` and `appendRerankStage(...)` and their wiring from FTS, Vector Search, RRF, RSF, Semantic Boosting, and Steering.
+- Added native rerank request caching, client-side movement annotation, reranked-pipeline caching, and stale-request protection to `Results`.
+- Routed both native and external rerank responses through the same client-side movement annotation. Atlas and Voyage adapters now return only reordered documents and rerank scores.
+- Rerank Fusion continues to rerank automatically, but now uses the simplified pipeline without movement annotations.
+
+### Validation
+- Editor diagnostics pass for all touched runtime files.
+- `npm run build` passes.
+

@@ -13,7 +13,7 @@ import Results from "./results"
 import SetParams from "./set-params";
 import {useApp} from "../context/AppContext";
 import { lcpFusion, centroidFusion } from "../lib/earlyFusion";
-import {vectorSearchStage, rerankParam, appendRerankStage} from "../lib/pipelineStages";
+import {vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
 import styles from "./shared.module.css";
@@ -22,7 +22,7 @@ function Steering({query,queryVector}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
-    const {schema,model} = useApp();
+    const {schema} = useApp();
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
         params:{
@@ -30,8 +30,7 @@ function Steering({query,queryVector}){
             numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
             positiveWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for positive feedback"},
             negativeWeight : {type:"range",val:1.0,range:[0.1,1.0],step:0.1,comment:"Weighting for negative feedback"},
-            fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"},
-            ...rerankParam(model)
+            fusionMethod : {type:"multi",val:"score (late)",options:["score (late)","centroid (early)","lcp (early)"],comment:"Fusion method to use"}
         },
         filters:{}
     }
@@ -72,7 +71,7 @@ function Steering({query,queryVector}){
 
     const handleSearch = () => {
         setLoading(true);
-        search(query,queryVector,schema,config,feedback,model)
+        search(query,queryVector,schema,config,feedback)
         .then(resp => {
           setResponse(resp.data);
           setLoading(false);
@@ -100,7 +99,7 @@ function Steering({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
                 <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
                 <h2>Steering Feedback</h2>
                 <div className={styles.steeringRow}>
@@ -152,7 +151,7 @@ async function getSteeringVectors(feedback,schema){
     }
 }
 
-async function search(query,queryVector,schema,config,feedback,model) {
+async function search(query,queryVector,schema,config,feedback) {
     let pipeline = [];
     if(!config.params.fusionMethod.val || (feedback.positive.length == 0 && feedback.negative.length == 0)){
         // If there's no feedback default to standard vector search
@@ -262,7 +261,7 @@ async function search(query,queryVector,schema,config,feedback,model) {
     return new Promise((resolve,reject) => {
         axios.post(`api/search`,
             { 
-                pipeline : appendRerankStage(pipeline, {query, schema, model, config})
+                pipeline : pipeline
             },
         ).then(response => resolve(response))
         .catch((error) => {

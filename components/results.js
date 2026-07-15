@@ -19,6 +19,7 @@ import Icon from '@leafygreen-ui/icon';
 import HybridScore from "./hybrid-score";
 import { useApp } from '../context/AppContext';
 import createHighlighting from "../lib/highlighting";
+import { rerankStages } from "../lib/pipelineStages";
 
 
 const Bulb = () => <svg style={{width:"16px",flexShrink:0}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16" role="img" aria-label="Bulb Icon"><path fill="currentColor" d="M12.331 8.5a5 5 0 1 0-8.612.086L5.408 11.5a1 1 0 0 0 .866.499H6.5V6a1.5 1.5 0 1 1 3 0v6h.224a1 1 0 0 0 .863-.496L12.34 8.5h-.009Z"></path><path fill="currentColor" d="M7.5 6v6h1V6a.5.5 0 0 0-1 0ZM10 14v-1H6v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1Z"></path></svg>;
@@ -38,14 +39,29 @@ function filterQueryVectors(obj) {
     return obj;
 }
 
+function annotateRerankMovement(baseResults, rerankedResults) {
+    const baseIndexes = new Map(baseResults.map((result, index) => [String(result._id), index]));
+    return rerankedResults.map((result, index) => {
+        const baseIndex = baseIndexes.get(String(result._id));
+        let reranked = 'not reranked';
+        if (baseIndex > index) {
+            reranked = 'moved up';
+        } else if (baseIndex < index) {
+            reranked = 'moved down';
+        }
+        return {...result, reranked};
+    });
+}
+
 function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feedback=null,setFeedback=null}){
     const [open, setOpen] = useState(false);
-    const query = response? response.query : null;
     const time = response? response.time : null;
     const {model,schema} = useApp();
     const [rerank, setRerank] = useState(false);
+    const [rerankText, setRerankText] = useState(queryText || '');
     const [results, setResults] = useState(response? response.results.length > 0? response.results : null : null);
     const [rerankedResults, setRerankedResults] = useState(null);
+    const [rerankedQuery, setRerankedQuery] = useState(null);
     const { pushToast } = useToast();
 
     //If feedback is selected we give option to thumbs up/down each result and store their ids in positive/negative arrays
@@ -105,15 +121,41 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
     };
 
     useEffect(() => {
+        let active = true;
         if(rerank && rerankedResults == null && response.results.length >0 && queryText && queryText != "")
         {
-            axios.post('api/rerank', {documents:response.results,query:queryText})
+            const nativeRerank = model?.reranking?.provider === 'native';
+            const rerankRequest = nativeRerank
+                ? (() => {
+                    const pipeline = [
+                        ...response.query,
+                        ...rerankStages(
+                            rerankText,
+                            ['title', 'description', ...(schema.searchFields || [])],
+                            model.reranking.model,
+                            response.results.length
+                        )
+                    ];
+                    return axios.post('api/search', {pipeline}).then(resp => ({
+                        results: resp.data.results,
+                        query: resp.data.query
+                    }));
+                })()
+                : axios.post('api/rerank', {documents:response.results,query:rerankText})
+                    .then(resp => ({results: resp.data.results, query: null}));
+
+            rerankRequest
                 .then(resp => {
-                    setResults(resp.data.results);
-                    setRerankedResults(resp.data.results);
+                    if (!active) return;
+                    const annotatedResults = annotateRerankMovement(response.results, resp.results);
+                    setResults(annotatedResults);
+                    setRerankedResults(annotatedResults);
+                    setRerankedQuery(resp.query);
                 })
                 .catch(error => {
+                    if (!active) return;
                     console.log(error);
+                    setRerank(false);
                     pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Reranking failed. ${error}`});
                 });
         }
@@ -125,7 +167,10 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
         {
             setResults(response.results);
         }
-    },[rerank]);
+        return () => {
+            active = false;
+        };
+    },[rerank, rerankText]);
 
     useEffect(() => {
         if(response && response.results.length > 0)
@@ -136,8 +181,12 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
             setResults([]);
         }
         setRerankedResults(null);
+        setRerankedQuery(null);
         setRerank(false);
+        setRerankText(queryText || '');
     },[response]);
+
+    const displayedQuery = rerank && rerankedQuery ? rerankedQuery : response?.query;
 
     return (
         <div>
@@ -146,7 +195,35 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
             <div style={{paddingLeft:"40px",paddingRight:"40px"}}>
                 <div style={{paddingTop:"25px"}}>
                     <div style={{display:"grid",gridTemplateColumns:"20% 50% 30%",gap:"5px",alignItems:"start"}}>
-                        {(model?.reranking?.provider && model.reranking.provider !== 'native' && rerankOpt)? <div style={{padding:"4px 16px"}}><Checkbox checked={rerank} bold={true} label={"Use Reranker"} onChange={event => setRerank(!rerank)}/></div> : <></>}
+                        {(model?.reranking?.provider && rerankOpt)? <div style={{padding:"4px 16px"}}>
+                            <Checkbox checked={rerank} bold={true} label={"Use Reranker"} onChange={() => setRerank(!rerank)}/>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    marginTop: "8px",
+                                }}
+                            >
+                                <label
+                                    htmlFor="rerank-query"
+                                    style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+                                >
+                                    Reranking Query
+                                </label>
+                                <input
+                                    id="rerank-query"
+                                    style={{ width: "100%", minWidth: 0 }}
+                                    type="text"
+                                    value={rerankText}
+                                    onChange={(event) => {
+                                        setRerankedResults(null);
+                                        setRerankedQuery(null);
+                                        setRerankText(event.target.value);
+                                    }}
+                                />
+                            </div>
+                        </div> : <></>}
                         <div style={{padding:"4px 16px"}}><span style={{borderRadius:"5px",backgroundColor:palette.blue.light3, padding:"2px 4px", float:"left"}}><em>{msg? `${msg}, query took ${time}ms`:`query took ${time}ms`}</em></span></div>
                         <div style={{padding:"4px 16px"}}><Button style={{float:"right"}} onClick={()=>setOpen(true)} variant="default">Show Query</Button></div>
                     </div>
@@ -172,7 +249,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
                                                     r.description
                                                 }
                                             </Description>
-                                            {Object.keys(r).filter(k => !["_id","fts_score","vs_score","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked","preRerankIndex","postRerankIndex","scoreDetails"].includes(k)).map(k => (
+                                            {Object.keys(r).filter(k => !["_id","fts_score","vs_score","score","title","image","description","boost","highlights","vectorScore","rerank_score","reranked","scoreDetails"].includes(k)).map(k => (
                                                 Array.isArray(r[k])
                                                 ? (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k].join(", ")}</span></p>)
                                                 : (<p key={`${r._id}${k}`}>{k} : <span style={{fontWeight:"normal"}}>{r[k]}</span></p>)
@@ -204,7 +281,7 @@ function Results({queryText,response,msg,hybrid,noResultsMsg,rerankOpt=true,feed
                     <Subtitle>MongoDB Aggregation Pipeline</Subtitle>
                     <p>(press 'ESC' to close)</p>
                     <Code language={'javascript'}>
-                        {query ? JSON.stringify(filterQueryVectors(query),null,2) : "" }
+                        {displayedQuery ? JSON.stringify(filterQueryVectors(displayedQuery),null,2) : "" }
                     </Code>
                 </Modal>
             </div>
