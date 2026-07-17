@@ -39,6 +39,9 @@ async function initializeModel(){
         }else if(rerankProvider == "atlas"){
             rerank_model = new Models.atlas(process.env.RERANK_APIKEY);
             console.log("Using Atlas Voyage reranking");
+        }else if(rerankProvider == "native"){
+            rerank_model = new Models.native();
+            console.log("Using Native reranking");
         }
 
         modelInstance = {model, rerank_model};

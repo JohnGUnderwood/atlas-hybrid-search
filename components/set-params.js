@@ -4,7 +4,7 @@ import LoadingIndicator from "./LoadingIndicator";
 import { Select, Option } from '@leafygreen-ui/select';
 import styles from "./shared.module.css";
 
-function SetParams({loading,config,heading,resetConfig=null,setConfig}){
+function SetParams({loading,config,heading,query='',resetConfig=null,setConfig}){
     const handleSliderChange = (param, newValue) => {
         let updatedConfig = {
           ...config,
@@ -52,11 +52,26 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
         setConfig(prev => ({...prev, params: {...prev.params, ...updatedConfig}}));
     };
 
+    const handleTextChange = (param, value) => {
+        let updatedConfig = {
+            ...config,
+            [param]: {
+                ...config[param],
+                val: value,
+                editedForQuery: query
+            }
+        };
+        setConfig(prev => ({...prev, params: {...prev.params, ...updatedConfig}}));
+    };
+
     return (
         <div>
             <h2>{heading}</h2>
             {resetConfig? <div style={{maxWidth:"60px"}}><Button onClick={()=>resetConfig()} variant="primary">Reset</Button></div>:<></>}
-            {Object.keys(config).filter(param => config[param].type !== "hidden").map(param=>{
+            {Object.keys(config).filter(param => {
+                const dependency = config[param].dependsOn;
+                return config[param].type !== "hidden" && (!dependency || config[dependency]?.val);
+            }).map(param=>{
                 try{
                     return (
                         <div key={param}>
@@ -109,6 +124,17 @@ function SetParams({loading,config,heading,resetConfig=null,setConfig}){
                                         onChange={(e) => handleCheckboxChange(param, e.target.checked)}
                                     />
                                 </Label>
+                            )
+                            :
+                            config[param]['type'] === 'text' ?
+                            (
+                                <input
+                                    key={param+'_text'}
+                                    style={{width:"100%"}}
+                                    type="text"
+                                    value={config[param]['editedForQuery'] === query ? config[param]['val'] : query}
+                                    onChange={(e) => handleTextChange(param, e.target.value)}
+                                />
                             )
                             :
                             null

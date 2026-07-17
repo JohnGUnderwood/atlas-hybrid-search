@@ -5,6 +5,8 @@ import axios from "axios";
 // LeafyGreen
 import { Chip } from "@leafygreen-ui/chip";
 import { useToast } from '@leafygreen-ui/toast';
+import Icon from '@leafygreen-ui/icon';
+import TextInput from '@leafygreen-ui/text-input';
 
 // App Components
 import Results from "./results"
@@ -14,6 +16,7 @@ import { lcpFusion, centroidFusion } from "../lib/earlyFusion";
 import {vectorSearchStage} from "../lib/pipelineStages";
 import LoadingIndicator from "./LoadingIndicator";
 import FilterFields from "./filter-fields";
+import styles from "./shared.module.css";
 
 function Steering({query,queryVector}){
     const { pushToast } = useToast();
@@ -37,14 +40,31 @@ function Steering({query,queryVector}){
     }
 
     const [feedback, setFeedback] = useState({positive:[],negative:[]});
+    const [steeringText, setSteeringText] = useState("");
+
+    const addTextFeedback = async (type) => {
+        const text = steeringText.trim();
+        if(!text) return;
+        try{
+            const { data } = await axios.get('api/embed', { params: { terms: text, cache: false } });
+            setFeedback(prev => ({
+                ...prev,
+                [type]: [...prev[type], { id: `text_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, label: text, embedding: data }]
+            }));
+            setSteeringText("");
+        }catch(error){
+            pushToast({timeout:10000,variant:"warning",title:"Embedding Failure",description:`Steering text embedding failed. ${error}`});
+        }
+    }
 
 
     const VoteList = () => {
         return (
             <>
-                {feedback.positive.map(vote => (<Chip label={`${vote.label}`} variant="green" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, positive: feedback.positive.filter(_v => _v.id !== vote.id)})}/>))}
+                {feedback.positive.length > 0 ? <><br/></> : null}
+                {feedback.positive.map(vote => (<Chip baseFontSize="16" label={`${vote.label}`} variant="green" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback(prev => ({...prev, positive: prev.positive.filter(_v => _v.id !== vote.id)}))}/>))}
                 {feedback.positive.length > 0 && feedback.negative.length > 0 ? <><br/><br/></> : null}
-                {feedback.negative.map(vote => (<Chip label={`${vote.label}`} variant="red" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback({...feedback, negative: feedback.negative.filter(_v => _v.id !== vote.id)})}/>))}
+                {feedback.negative.map(vote => (<Chip baseFontSize="16" label={`${vote.label}`} variant="red" key={vote.id} style={{ marginRight: "4px" }} onDismiss={() => setFeedback(prev => ({...prev, negative: prev.negative.filter(_v => _v.id !== vote.id)}))}/>))}
             </>
         );
     }
@@ -79,12 +99,26 @@ function Steering({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => !['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
                 <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
-                <br/>
+                <h2>Steering Feedback</h2>
+                <div className={styles.steeringRow}>
+                    <TextInput
+                        className={styles.steeringLgInput}
+                        aria-label="Steering feedback text"
+                        value={steeringText}
+                        onChange={(e) => setSteeringText(e.target.value)}
+                        placeholder="Add free-text steering"
+                        sizeVariant="small"
+                    />
+                    <div className={styles.steeringIcons}>
+                        <Icon glyph="ThumbsUp" role="button" title="Add positive steering text" style={{cursor:"pointer",color:"#00684A"}} onClick={() => addTextFeedback('positive')} />
+                        <Icon glyph="ThumbsDown" role="button" title="Add negative steering text" style={{cursor:"pointer",color:"#B45A3C"}} onClick={() => addTextFeedback('negative')} />
+                    </div>
+                </div>
+                
                 {feedback.positive.length > 0 || feedback.negative.length > 0 ? 
                     <>
-                        <h2>Steering Feedback</h2>
                         <VoteList feedback={feedback} setFeedback={setFeedback} />
                         <br/>
                         <SetParams loading={loading} config={Object.fromEntries(Object.entries(config.params).filter(([k,v]) => ['positiveWeight','negativeWeight','fusionMethod'].includes(k)))} setConfig={setConfig} heading=""/>
@@ -104,12 +138,16 @@ function Steering({query,queryVector}){
 export default Steering;
 
 async function getSteeringVectors(feedback,schema){
-    const positiveVectors = feedback.positive.length > 0? await axios.post(`api/get`,{ids: feedback.positive.map(f => f.id),projection:{embedding:`$${schema.vectorField}`}}) : {data:[]};
-    const negativeVectors = feedback.negative.length > 0? await axios.post(`api/get`,{ids: feedback.negative.map(f => f.id),projection:{embedding:`$${schema.vectorField}`}}) : {data:[]};
+    const positiveTextVectors = feedback.positive.filter(f => f.embedding).map(f => ({ _id: f.id, embedding: f.embedding }));
+    const negativeTextVectors = feedback.negative.filter(f => f.embedding).map(f => ({ _id: f.id, embedding: f.embedding }));
+    const positiveIds = feedback.positive.filter(f => !f.embedding).map(f => f.id);
+    const negativeIds = feedback.negative.filter(f => !f.embedding).map(f => f.id);
+    const positiveVectors = positiveIds.length > 0? await axios.post(`api/get`,{ids: positiveIds,projection:{embedding:`$${schema.vectorField}`}}) : {data:[]};
+    const negativeVectors = negativeIds.length > 0? await axios.post(`api/get`,{ids: negativeIds,projection:{embedding:`$${schema.vectorField}`}}) : {data:[]};
 
     return {
-        positive: positiveVectors.data,
-        negative: negativeVectors.data
+        positive: [...positiveVectors.data, ...positiveTextVectors],
+        negative: [...negativeVectors.data, ...negativeTextVectors]
     }
 }
 

@@ -33,7 +33,7 @@ function VS({query,queryVector}){
         console.log("Running vector search with config: ", config);
         if(queryVector){
             setLoading(true);
-            search(queryVector,schema,config)
+            search(query,queryVector,schema,config)
             .then(resp => {
               setResponse(resp.data);
               setLoading(false);
@@ -56,7 +56,7 @@ function VS({query,queryVector}){
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
             <div>
-                <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
+                <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Vector Search Params"/>
                 <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Vector Search" description="Add metadata prefilters to vector search" />
             </div>
             {loading
@@ -69,7 +69,7 @@ function VS({query,queryVector}){
 
 export default VS;
 
-async function search(queryVector,schema,config) {
+async function search(query,queryVector,schema,config) {
     const pipeline = [
         vectorSearchStage(
             queryVector,

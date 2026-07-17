@@ -50,18 +50,10 @@ class AtlasVoyageModel {
                 "rerank",
                 {model:this.rerank_model,query:query,documents:docStrings}
             );
-            const reranked = resp.data.data.map((r,idx) => {
-                var doc = docMap[`${r.index}`];
-                if(idx < parseInt(r.index)){
-                    doc.reranked = "moved up"
-                }else if(idx > parseInt(r.index)){
-                    doc.reranked = "moved down"
-                }else{
-                    doc.reranked = "not reranked"
-                }
-                doc.rerank_score = r.relevance_score;
-                return doc;
-            });
+            const reranked = resp.data.data.map((r) => ({
+                ...docMap[`${r.index}`],
+                rerank_score: r.relevance_score
+            }));
             return reranked;
         }catch(error){
             console.log(`Failed to rerank documents ${error}`)

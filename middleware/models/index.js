@@ -5,13 +5,15 @@ import { NomicModel } from "./nomic";
 import { VoyageAIModel } from "./voyageai";
 import { AtlasVoyageModel } from "./atlas";
 import { OllamaModel } from "./ollama";
+import { NativeModel } from "./native";
 
 export default {
-    aure_openai:AzureOpenAIModel,
+    azure_openai:AzureOpenAIModel,
     openai:OpenAIModel,
     mistral:MistralModel,
     nomic:NomicModel,
     voyageai:VoyageAIModel,
     ollama:OllamaModel,
-    atlas: AtlasVoyageModel
+    atlas: AtlasVoyageModel,
+    native: NativeModel
 }

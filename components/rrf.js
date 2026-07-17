@@ -21,7 +21,7 @@ function RRF({query,queryVector}){
         vector_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the vector results"},
         fts_weight : {type:"range",val:1,range:[0,20],step:1,comment:"Weight the text results"}, 
         limit : {type:"range",val:10,range:[1,25],step:1,comment:"Number of results to return"},
-        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"},
+        numCandidates : {type:"range",val:100,range:[1,625],step:1,comment:"How many candidates to retrieve from the vector search"}
       },
       filters:{}
     }
@@ -55,7 +55,7 @@ function RRF({query,queryVector}){
     return (
       <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
           <div>
-            <SetParams loading={loading} config={config.params} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
+            <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Reciprocal Rank Fusion Params"/>
             <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} />
           </div>
           {loading

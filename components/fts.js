@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Results from "./results"
+import SetParams from "./set-params";
 import { useToast } from '@leafygreen-ui/toast';
 import {searchStage,projectStage} from "../lib/pipelineStages";
 import {useApp} from "../context/AppContext";
@@ -12,9 +13,11 @@ function FTS({query}){
     const { pushToast } = useToast();
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
+    const {schema} = useApp();
 
     // CONFIGURATION PARAMETERS
     const defaultConfig = {
+        params: {},
         filters: {}
     }
     const [config, setConfig] = useState(defaultConfig)
@@ -23,18 +26,29 @@ function FTS({query}){
         setConfig(defaultConfig);
     }
 
-    const {schema} = useApp();
     useEffect(() => {
+        const controller = new AbortController();
+        let active = true;
+
         if(query){
             setLoading(true);
-            search(query,schema,config)
+            search(query,schema,config,controller.signal)
             .then(resp => {
-                setResponse(resp.data);
+                if(active){
+                    setResponse(resp.data);
+                }
             })
             .catch(error => {
+                if(!active || axios.isCancel(error)){
+                    return;
+                }
                 console.log(error);
                 pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`})
-            }).finally(() => setLoading(false));
+            }).finally(() => {
+                if(active){
+                    setLoading(false);
+                }
+            });
         }else{
           setResponse(prev => {
             return {
@@ -42,14 +56,25 @@ function FTS({query}){
               results: []
             };
           });
-        }    
+          setLoading(false);
+        }
+
+        return () => {
+            active = false;
+            controller.abort();
+        };
     },[query, config]);
 
     return (
         <div style={{display:"grid",gridTemplateColumns:"20% 80%",gap:"5px",alignItems:"start"}}>
-            
-            <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Text Search" description="Add search filters on metadata"/>
-            
+            <div>
+                {Object.keys(config.params).length > 0
+                    ? <SetParams loading={loading} config={config.params} query={query} resetConfig={resetConfig} setConfig={setConfig} heading="Text Search Params"/>
+                    : <></>
+                }
+                <FilterFields query={query} schema={schema} config={config} setConfig={setConfig} label="Filter Text Search" description="Add search filters on metadata"/>
+            </div>
+
             {loading
             ?<LoadingIndicator description="Loading..."/>
             :<Results queryText={query} response={response} noResultsMsg={`No results. ${query == '' || !query ? 'Type something in the search box.' : ''}`}/>
@@ -66,7 +91,7 @@ function FTS({query}){
 
 export default FTS;
 
-async function search(query,schema,config) {
+async function search(query,schema,config,signal) {
     // CONFIGURATION PARAMETERS
     const k = 10
 
@@ -80,9 +105,12 @@ async function search(query,schema,config) {
             { 
                 pipeline : pipeline
             },
+            {
+                signal
+            }
         ).then(response => resolve(response))
         .catch((error) => {
-            reject(error.response.data.error);
+            reject(axios.isCancel(error) ? error : error.response?.data?.error ?? error);
         })
     });
 }
