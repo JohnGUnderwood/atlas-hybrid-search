@@ -20,6 +20,59 @@
   width: 60px;
 }
 
+.rerankToolbar {
+  display: grid;
+  grid-template-columns: minmax(20rem, 40%) minmax(0, 1fr) auto;
+  gap: 5px;
+  align-items: start;
+}
+
+.rerankOptions {
+  padding: 4px 16px;
+  min-width: 0;
+}
+
+.rerankQueryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.rerankQueryInput {
+  flex: 1 1 20rem;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.rerankQueryInput[data-lgid="lg-text_input"] {
+  flex: 1 1 20rem;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.rerankQueryInput[data-lgid="lg-text_input"] > div,
+.rerankQueryInput[data-lgid="lg-text_input"] input {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .rerankToolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rerankOptions {
+    grid-column: 1 / -1;
+  }
+}
+
 .steeringLgInput {
   min-width: 0 !important;
   width: 100% !important;

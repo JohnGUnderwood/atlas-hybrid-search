@@ -27,16 +27,28 @@ function FTS({query}){
     }
 
     useEffect(() => {
+        const controller = new AbortController();
+        let active = true;
+
         if(query){
             setLoading(true);
-            search(query,schema,config)
+            search(query,schema,config,controller.signal)
             .then(resp => {
-                setResponse(resp.data);
+                if(active){
+                    setResponse(resp.data);
+                }
             })
             .catch(error => {
+                if(!active || axios.isCancel(error)){
+                    return;
+                }
                 console.log(error);
                 pushToast({timeout:10000,variant:"warning",title:"API Failure",description:`Search query failed. ${error}`})
-            }).finally(() => setLoading(false));
+            }).finally(() => {
+                if(active){
+                    setLoading(false);
+                }
+            });
         }else{
           setResponse(prev => {
             return {
@@ -44,7 +56,13 @@ function FTS({query}){
               results: []
             };
           });
-        }    
+          setLoading(false);
+        }
+
+        return () => {
+            active = false;
+            controller.abort();
+        };
     },[query, config]);
 
     return (
@@ -73,7 +91,7 @@ function FTS({query}){
 
 export default FTS;
 
-async function search(query,schema,config) {
+async function search(query,schema,config,signal) {
     // CONFIGURATION PARAMETERS
     const k = 10
 
@@ -87,9 +105,12 @@ async function search(query,schema,config) {
             { 
                 pipeline : pipeline
             },
+            {
+                signal
+            }
         ).then(response => resolve(response))
         .catch((error) => {
-            reject(error.response.data.error);
+            reject(axios.isCancel(error) ? error : error.response?.data?.error ?? error);
         })
     });
 }
