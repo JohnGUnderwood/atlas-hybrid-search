@@ -15,7 +15,7 @@ const config = {
         descriptionField : "plot",
         titleField : "title",
         imageField : "poster",
-        searchFields: ["cast, genres"],
+        searchFields: ["cast", "genres"],
         vectorField : "plot_embedding",
         vectorSourceField: "plot"
     }, 
